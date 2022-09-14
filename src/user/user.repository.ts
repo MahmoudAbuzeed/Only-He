@@ -1,17 +1,17 @@
-import { InjectRepository } from '@nestjs/typeorm';
-import { Injectable } from '@nestjs/common';
-import { Repository } from 'typeorm';
+import { InjectRepository } from "@nestjs/typeorm";
+import { Injectable } from "@nestjs/common";
+import { Repository } from "typeorm";
 
-import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
+import { CreateUserDto } from "./dto/create-user.dto";
+import { UpdateUserDto } from "./dto/update-user.dto";
 
-import { User } from './entities/user.entity';
+import { User } from "./entities/user.entity";
 
 @Injectable()
 export class UserRepo {
   constructor(
     @InjectRepository(User)
-    private userRepository: Repository<User>,
+    private userRepository: Repository<User>
   ) {}
 
   async create(createUserDto: CreateUserDto) {
@@ -24,18 +24,9 @@ export class UserRepo {
 
   async getByEmail(email: string) {
     const user = await this.userRepository.findOne({ email });
-    const department: any = await this.userRepository.find({
-      where: { email: user?.email },
-      relations: ['department'],
-    });
 
     return {
       ...user,
-      department: {
-        id: department[0]?.department.id,
-        name: department[0]?.department.name,
-        type: department[0]?.department.type,
-      },
     };
   }
 

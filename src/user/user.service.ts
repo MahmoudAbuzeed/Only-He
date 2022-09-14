@@ -1,25 +1,21 @@
-import { Injectable } from '@nestjs/common';
-import * as bcrypt from 'bcrypt';
+import { Injectable } from "@nestjs/common";
+import * as bcrypt from "bcrypt";
 
-import {
-  CREATED_SUCCESSFULLY,
-  DELETED_SUCCESSFULLY,
-  UPDATED_SUCCESSFULLY,
-} from '../../messages/index';
-import { ErrorHandler } from 'shared/errorHandler.service';
+import { CREATED_SUCCESSFULLY, DELETED_SUCCESSFULLY, UPDATED_SUCCESSFULLY } from "../../messages/index";
+import { ErrorHandler } from "shared/errorHandler.service";
 
-import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
-import { SignInDto } from './dto/signin.dto';
-import { UserRepo } from './user.repository';
-import { JwtService } from '@nestjs/jwt';
+import { CreateUserDto } from "./dto/create-user.dto";
+import { UpdateUserDto } from "./dto/update-user.dto";
+import { SignInDto } from "./dto/signin.dto";
+import { UserRepo } from "./user.repository";
+import { JwtService } from "@nestjs/jwt";
 
 @Injectable()
 export class UserService {
   constructor(
     private readonly userRepo: UserRepo,
     private readonly jwtService: JwtService,
-    private readonly errorHandler: ErrorHandler,
+    private readonly errorHandler: ErrorHandler
   ) {}
 
   async hashPassword(password: string) {
@@ -42,10 +38,7 @@ export class UserService {
   async findByEmail(signInDto: SignInDto) {
     try {
       const user = await this.userRepo.getByEmail(signInDto.email);
-      const isPasswordMatching = await bcrypt.compare(
-        signInDto.password,
-        user.password,
-      );
+      const isPasswordMatching = await bcrypt.compare(signInDto.password, user.password);
       if (!isPasswordMatching) throw this.errorHandler.didNotMatch();
 
       const finalReturnedUser = {
@@ -54,7 +47,6 @@ export class UserService {
         user_name: user.user_name,
         email: user.email,
         id: user.id,
-        department: user.department,
       };
 
       return { ...finalReturnedUser, token: this.jwtService.sign({ user }) };
