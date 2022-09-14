@@ -1,6 +1,4 @@
-import { IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
-import { Department } from 'src/department/entities/department.entity';
-import { Sector } from 'src/sector/entities/sector.entity';
+import { IsNotEmpty, IsNumber, IsOptional, IsString } from "class-validator";
 
 export class CreateUserDto {
   @IsString()
@@ -22,12 +20,4 @@ export class CreateUserDto {
   @IsString()
   @IsNotEmpty()
   password: string;
-
-  @IsNumber()
-  @IsOptional()
-  sector: Sector;
-
-  @IsNumber()
-  @IsOptional()
-  department: Department;
 }

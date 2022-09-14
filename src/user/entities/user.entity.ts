@@ -1,14 +1,4 @@
-import {
-  Column,
-  Entity,
-  PrimaryGeneratedColumn,
-  CreateDateColumn,
-  UpdateDateColumn,
-  ManyToOne,
-} from 'typeorm';
-
-import { Sector } from 'src/sector/entities/sector.entity';
-import { Department } from 'src/department/entities/department.entity';
+import { Column, Entity, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToOne } from "typeorm";
 
 @Entity()
 export class User {
@@ -35,10 +25,4 @@ export class User {
 
   @UpdateDateColumn()
   updated_at: Date;
-
-  @ManyToOne(() => Sector)
-  sector: Sector;
-
-  @ManyToOne(() => Department)
-  department: Department;
 }

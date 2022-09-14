@@ -7,7 +7,6 @@ import { AppService } from './app.service';
 
 import { modules } from './modules';
 import { entities } from './entities';
-import { SharedModule } from 'shared/shared.module';
 import { join } from 'path';
 import { ServeStaticModule } from '@nestjs/serve-static';
 
@@ -17,7 +16,6 @@ import { ServeStaticModule } from '@nestjs/serve-static';
     ServeStaticModule.forRoot({
       rootPath: join(__dirname, '..', 'uploadedFiles'),
     }),
-    SharedModule,
     ConfigModule.forRoot(),
     TypeOrmModule.forRoot({
       type: 'mysql',
