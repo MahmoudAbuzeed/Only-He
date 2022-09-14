@@ -13,13 +13,15 @@ const user_service_1 = require("./user.service");
 const user_controller_1 = require("./user.controller");
 const user_entity_1 = require("./entities/user.entity");
 const user_repository_1 = require("./user.repository");
+const jwt_1 = require("@nestjs/jwt");
+const errorHandler_service_1 = require("../../shared/errorHandler.service");
 let UserModule = class UserModule {
 };
 UserModule = __decorate([
     (0, common_1.Module)({
         imports: [typeorm_1.TypeOrmModule.forFeature([user_entity_1.User])],
         controllers: [user_controller_1.UserController],
-        providers: [user_service_1.UserService, user_repository_1.UserRepo],
+        providers: [user_service_1.UserService, user_repository_1.UserRepo, jwt_1.JwtService, errorHandler_service_1.ErrorHandler],
     })
 ], UserModule);
 exports.UserModule = UserModule;

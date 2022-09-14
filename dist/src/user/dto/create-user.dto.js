@@ -11,8 +11,6 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CreateUserDto = void 0;
 const class_validator_1 = require("class-validator");
-const department_entity_1 = require("../../department/entities/department.entity");
-const sector_entity_1 = require("../../sector/entities/sector.entity");
 class CreateUserDto {
 }
 __decorate([
@@ -40,15 +38,5 @@ __decorate([
     (0, class_validator_1.IsNotEmpty)(),
     __metadata("design:type", String)
 ], CreateUserDto.prototype, "password", void 0);
-__decorate([
-    (0, class_validator_1.IsNumber)(),
-    (0, class_validator_1.IsOptional)(),
-    __metadata("design:type", sector_entity_1.Sector)
-], CreateUserDto.prototype, "sector", void 0);
-__decorate([
-    (0, class_validator_1.IsNumber)(),
-    (0, class_validator_1.IsOptional)(),
-    __metadata("design:type", department_entity_1.Department)
-], CreateUserDto.prototype, "department", void 0);
 exports.CreateUserDto = CreateUserDto;
 //# sourceMappingURL=create-user.dto.js.map

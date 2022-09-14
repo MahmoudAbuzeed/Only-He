@@ -1,24 +1,25 @@
-import { Module, Global } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { ConfigModule } from '@nestjs/config';
+import { Module, Global } from "@nestjs/common";
+import { TypeOrmModule } from "@nestjs/typeorm";
+import { ConfigModule } from "@nestjs/config";
 
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
+import { AppController } from "./app.controller";
+import { AppService } from "./app.service";
 
-import { modules } from './modules';
-import { entities } from './entities';
-import { join } from 'path';
-import { ServeStaticModule } from '@nestjs/serve-static';
+import { modules } from "./modules";
+import { entities } from "./entities";
+import { join } from "path";
+import { ServeStaticModule } from "@nestjs/serve-static";
+import { JwtService } from "@nestjs/jwt";
 
 @Global()
 @Module({
   imports: [
     ServeStaticModule.forRoot({
-      rootPath: join(__dirname, '..', 'uploadedFiles'),
+      rootPath: join(__dirname, "..", "uploadedFiles"),
     }),
     ConfigModule.forRoot(),
     TypeOrmModule.forRoot({
-      type: 'mysql',
+      type: "mysql",
       // host: 'mysqldb',
       host: process.env.DATABASE_HOST,
       port: parseInt(process.env.DATABASE_PORT),
@@ -31,6 +32,6 @@ import { ServeStaticModule } from '@nestjs/serve-static';
     ...modules,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, JwtService],
 })
 export class AppModule {}

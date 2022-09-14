@@ -13,13 +13,14 @@ const role_service_1 = require("./role.service");
 const role_controller_1 = require("./role.controller");
 const role_entity_1 = require("./entities/role.entity");
 const role_repository_1 = require("./role.repository");
+const errorHandler_service_1 = require("../../shared/errorHandler.service");
 let RoleModule = class RoleModule {
 };
 RoleModule = __decorate([
     (0, common_1.Module)({
         imports: [typeorm_1.TypeOrmModule.forFeature([role_entity_1.Role])],
         controllers: [role_controller_1.RoleController],
-        providers: [role_service_1.RoleService, role_repository_1.RoleRepo],
+        providers: [role_service_1.RoleService, role_repository_1.RoleRepo, errorHandler_service_1.ErrorHandler],
     })
 ], RoleModule);
 exports.RoleModule = RoleModule;

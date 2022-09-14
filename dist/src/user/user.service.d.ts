@@ -1,9 +1,9 @@
-import { ErrorHandler } from 'shared/errorHandler.service';
-import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
-import { SignInDto } from './dto/signin.dto';
-import { UserRepo } from './user.repository';
-import { JwtService } from '@nestjs/jwt';
+import { ErrorHandler } from "shared/errorHandler.service";
+import { CreateUserDto } from "./dto/create-user.dto";
+import { UpdateUserDto } from "./dto/update-user.dto";
+import { SignInDto } from "./dto/signin.dto";
+import { UserRepo } from "./user.repository";
+import { JwtService } from "@nestjs/jwt";
 export declare class UserService {
     private readonly userRepo;
     private readonly jwtService;
@@ -20,11 +20,6 @@ export declare class UserService {
         user_name: string;
         email: string;
         id: number;
-        department: {
-            id: any;
-            name: any;
-            type: any;
-        };
     }>;
     findAll(): Promise<import("./entities/user.entity").User[]>;
     findOne(id: number): Promise<import("./entities/user.entity").User>;

@@ -1,12 +1,3 @@
-import { ProjectHistory } from './project-history/entities/project-history.entity';
-import { TaskReference } from './task-reference/entities/task-reference.entity';
-import { StackHolder } from './stack-holder/entities/stack-holder.entity';
-import { Attachment } from './attachment/entities/attachment.entity';
-import { Department } from './department/entities/department.entity';
-import { Sector } from './sector/entities/sector.entity';
-import { Task } from './task/entities/task.entity';
-import { User } from './user/entities/user.entity';
-import { Role } from './role/entities/role.entity';
-import { ProjectObjective } from './project-objective/entities/project-objective.entity';
-import { Finance } from './finance/entities/finance.entity';
-export declare const entities: (typeof Department | typeof Sector | typeof StackHolder | typeof ProjectObjective | typeof ProjectHistory | typeof TaskReference | typeof Attachment | typeof Task | typeof User | typeof Role | typeof Finance)[];
+import { User } from "./user/entities/user.entity";
+import { Role } from "./role/entities/role.entity";
+export declare const entities: (typeof User | typeof Role)[];

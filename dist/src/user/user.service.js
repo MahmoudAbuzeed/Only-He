@@ -50,7 +50,6 @@ let UserService = class UserService {
                 user_name: user.user_name,
                 email: user.email,
                 id: user.id,
-                department: user.department,
             };
             return Object.assign(Object.assign({}, finalReturnedUser), { token: this.jwtService.sign({ user }) });
         }

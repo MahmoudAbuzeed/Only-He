@@ -14,9 +14,9 @@ const app_controller_1 = require("./app.controller");
 const app_service_1 = require("./app.service");
 const modules_1 = require("./modules");
 const entities_1 = require("./entities");
-const shared_module_1 = require("../shared/shared.module");
 const path_1 = require("path");
 const serve_static_1 = require("@nestjs/serve-static");
+const jwt_1 = require("@nestjs/jwt");
 let AppModule = class AppModule {
 };
 AppModule = __decorate([
@@ -24,12 +24,11 @@ AppModule = __decorate([
     (0, common_1.Module)({
         imports: [
             serve_static_1.ServeStaticModule.forRoot({
-                rootPath: (0, path_1.join)(__dirname, '..', 'uploadedFiles'),
+                rootPath: (0, path_1.join)(__dirname, "..", "uploadedFiles"),
             }),
-            shared_module_1.SharedModule,
             config_1.ConfigModule.forRoot(),
             typeorm_1.TypeOrmModule.forRoot({
-                type: 'mysql',
+                type: "mysql",
                 host: process.env.DATABASE_HOST,
                 port: parseInt(process.env.DATABASE_PORT),
                 username: process.env.DATABASE_USER,
@@ -41,7 +40,7 @@ AppModule = __decorate([
             ...modules_1.modules,
         ],
         controllers: [app_controller_1.AppController],
-        providers: [app_service_1.AppService],
+        providers: [app_service_1.AppService, jwt_1.JwtService],
     })
 ], AppModule);
 exports.AppModule = AppModule;

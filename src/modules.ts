@@ -1,7 +1,4 @@
-import { UserModule } from './user/user.module';
-import { RoleModule } from './role/role.module';
+import { UserModule } from "./user/user.module";
+import { RoleModule } from "./role/role.module";
 
-export const modules = [
-  UserModule,
-  RoleModule,
-];
+export const modules = [UserModule, RoleModule];

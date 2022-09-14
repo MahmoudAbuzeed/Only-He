@@ -28,17 +28,8 @@ let UserRepo = class UserRepo {
         return await this.userRepository.find();
     }
     async getByEmail(email) {
-        var _a, _b, _c;
         const user = await this.userRepository.findOne({ email });
-        const department = await this.userRepository.find({
-            where: { email: user === null || user === void 0 ? void 0 : user.email },
-            relations: ['department'],
-        });
-        return Object.assign(Object.assign({}, user), { department: {
-                id: (_a = department[0]) === null || _a === void 0 ? void 0 : _a.department.id,
-                name: (_b = department[0]) === null || _b === void 0 ? void 0 : _b.department.name,
-                type: (_c = department[0]) === null || _c === void 0 ? void 0 : _c.department.type,
-            } });
+        return Object.assign({}, user);
     }
     async findOne(id) {
         return await this.userRepository.findOne(id);

@@ -1,7 +1,7 @@
-import { UserService } from './user.service';
-import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
-import { SignInDto } from './dto/signin.dto';
+import { UserService } from "./user.service";
+import { CreateUserDto } from "./dto/create-user.dto";
+import { UpdateUserDto } from "./dto/update-user.dto";
+import { SignInDto } from "./dto/signin.dto";
 export declare class UserController {
     private readonly userService;
     constructor(userService: UserService);
@@ -16,11 +16,6 @@ export declare class UserController {
         user_name: string;
         email: string;
         id: number;
-        department: {
-            id: any;
-            name: any;
-            type: any;
-        };
     }>;
     findOne(id: string): Promise<import("./entities/user.entity").User>;
     update(id: string, updateUserDto: UpdateUserDto): Promise<{
