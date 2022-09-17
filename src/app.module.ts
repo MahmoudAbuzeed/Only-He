@@ -10,6 +10,7 @@ import { entities } from "./entities";
 import { join } from "path";
 import { ServeStaticModule } from "@nestjs/serve-static";
 import { JwtService } from "@nestjs/jwt";
+import { AddressModule } from './address/address.module';
 
 @Global()
 @Module({
@@ -30,6 +31,7 @@ import { JwtService } from "@nestjs/jwt";
       synchronize: true,
     }),
     ...modules,
+    AddressModule,
   ],
   controllers: [AppController],
   providers: [AppService, JwtService],
