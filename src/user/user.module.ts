@@ -8,10 +8,11 @@ import { User } from "./entities/user.entity";
 import { UserRepo } from "./user.repository";
 import { JwtService } from "@nestjs/jwt";
 import { ErrorHandler } from "shared/errorHandler.service";
+import { Logger } from "shared/logger/logger.service";
 
 @Module({
   imports: [TypeOrmModule.forFeature([User])],
   controllers: [UserController],
-  providers: [UserService, UserRepo, JwtService, ErrorHandler],
+  providers: [UserService, UserRepo, JwtService, ErrorHandler, Logger],
 })
 export class UserModule {}

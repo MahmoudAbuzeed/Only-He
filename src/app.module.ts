@@ -1,4 +1,4 @@
-import { Module, Global } from "@nestjs/common";
+import { Module, Global, MiddlewareConsumer } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { ConfigModule } from "@nestjs/config";
 
@@ -10,6 +10,9 @@ import { entities } from "./entities";
 import { join } from "path";
 import { ServeStaticModule } from "@nestjs/serve-static";
 import { JwtService } from "@nestjs/jwt";
+import { Logger } from "shared/logger/logger.service";
+import { LoggerMiddleware } from "shared/logger/logger.middleware";
+
 
 @Global()
 @Module({
@@ -32,6 +35,10 @@ import { JwtService } from "@nestjs/jwt";
     ...modules,
   ],
   controllers: [AppController],
-  providers: [AppService, JwtService],
+  providers: [AppService, JwtService, Logger],
 })
-export class AppModule {}
+export class AppModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(LoggerMiddleware).forRoutes('*');
+  }
+}
