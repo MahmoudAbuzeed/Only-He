@@ -4,11 +4,13 @@ import { UpdateUserDto } from "./dto/update-user.dto";
 import { SignInDto } from "./dto/signin.dto";
 import { UserRepo } from "./user.repository";
 import { JwtService } from "@nestjs/jwt";
+import { Logger } from "shared/logger/logger.service";
 export declare class UserService {
     private readonly userRepo;
     private readonly jwtService;
     private readonly errorHandler;
-    constructor(userRepo: UserRepo, jwtService: JwtService, errorHandler: ErrorHandler);
+    private logger;
+    constructor(userRepo: UserRepo, jwtService: JwtService, errorHandler: ErrorHandler, logger: Logger);
     hashPassword(password: string): Promise<string>;
     create(createUserDto: CreateUserDto): Promise<{
         message: string;

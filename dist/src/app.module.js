@@ -17,7 +17,12 @@ const entities_1 = require("./entities");
 const path_1 = require("path");
 const serve_static_1 = require("@nestjs/serve-static");
 const jwt_1 = require("@nestjs/jwt");
+const logger_service_1 = require("../shared/logger/logger.service");
+const logger_middleware_1 = require("../shared/logger/logger.middleware");
 let AppModule = class AppModule {
+    configure(consumer) {
+        consumer.apply(logger_middleware_1.LoggerMiddleware).forRoutes('*');
+    }
 };
 AppModule = __decorate([
     (0, common_1.Global)(),
@@ -40,7 +45,7 @@ AppModule = __decorate([
             ...modules_1.modules,
         ],
         controllers: [app_controller_1.AppController],
-        providers: [app_service_1.AppService, jwt_1.JwtService],
+        providers: [app_service_1.AppService, jwt_1.JwtService, logger_service_1.Logger],
     })
 ], AppModule);
 exports.AppModule = AppModule;

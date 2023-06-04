@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { Inject, Injectable } from "@nestjs/common";
 import * as bcrypt from "bcrypt";
 
 import { CREATED_SUCCESSFULLY, DELETED_SUCCESSFULLY, UPDATED_SUCCESSFULLY } from "../../messages/index";
@@ -9,13 +9,15 @@ import { UpdateUserDto } from "./dto/update-user.dto";
 import { SignInDto } from "./dto/signin.dto";
 import { UserRepo } from "./user.repository";
 import { JwtService } from "@nestjs/jwt";
+import { Logger } from "shared/logger/logger.service";
 
 @Injectable()
 export class UserService {
   constructor(
     private readonly userRepo: UserRepo,
     private readonly jwtService: JwtService,
-    private readonly errorHandler: ErrorHandler
+    private readonly errorHandler: ErrorHandler,
+    @Inject(Logger) private logger: Logger,
   ) {}
 
   async hashPassword(password: string) {
