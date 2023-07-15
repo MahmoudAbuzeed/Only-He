@@ -1,13 +1,5 @@
-import { Product } from 'src/product/entities/product.entity';
-import {
-  Column,
-  Entity,
-  PrimaryGeneratedColumn,
-  CreateDateColumn,
-  UpdateDateColumn,
-  ManyToOne,
-  OneToMany,
-} from 'typeorm';
+import { Column, Entity, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, OneToMany } from "typeorm";
+import { Product } from "src/product/entities/product.entity";
 
 @Entity()
 export class Category {

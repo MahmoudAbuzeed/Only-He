@@ -1,7 +1,7 @@
-import { Repository } from 'typeorm';
-import { CreateRoleDto } from './dto/create-role.dto';
-import { UpdateRoleDto } from './dto/update-role.dto';
-import { Role } from './entities/role.entity';
+import { Repository } from "typeorm";
+import { CreateRoleDto } from "./dto/create-role.dto";
+import { UpdateRoleDto } from "./dto/update-role.dto";
+import { Role } from "./entities/role.entity";
 export declare class RoleRepo {
     private roleRepository;
     constructor(roleRepository: Repository<Role>);

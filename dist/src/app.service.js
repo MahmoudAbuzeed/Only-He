@@ -11,7 +11,7 @@ const common_1 = require("@nestjs/common");
 const path_1 = require("path");
 let AppService = class AppService {
     getHello() {
-        return (0, path_1.join)(__dirname, '..', 'uploadedFiles');
+        return (0, path_1.join)(__dirname, "..", "uploadedFiles");
     }
 };
 AppService = __decorate([

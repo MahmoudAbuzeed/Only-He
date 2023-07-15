@@ -21,7 +21,7 @@ const logger_service_1 = require("../shared/logger/logger.service");
 const logger_middleware_1 = require("../shared/logger/logger.middleware");
 let AppModule = class AppModule {
     configure(consumer) {
-        consumer.apply(logger_middleware_1.LoggerMiddleware).forRoutes('*');
+        consumer.apply(logger_middleware_1.LoggerMiddleware).forRoutes("*");
     }
 };
 AppModule = __decorate([

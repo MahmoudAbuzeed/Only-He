@@ -57,8 +57,7 @@ let RoleService = class RoleService {
 };
 RoleService = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [role_repository_1.RoleRepo,
-        errorHandler_service_1.ErrorHandler])
+    __metadata("design:paramtypes", [role_repository_1.RoleRepo, errorHandler_service_1.ErrorHandler])
 ], RoleService);
 exports.RoleService = RoleService;
 //# sourceMappingURL=role.service.js.map

@@ -1,20 +1,13 @@
-import { Injectable } from '@nestjs/common';
-import { CreateRoleDto } from './dto/create-role.dto';
-import { UpdateRoleDto } from './dto/update-role.dto';
-import { RoleRepo } from './role.repository';
-import { ErrorHandler } from 'shared/errorHandler.service';
-import {
-  CREATED_SUCCESSFULLY,
-  DELETED_SUCCESSFULLY,
-  UPDATED_SUCCESSFULLY,
-} from 'messages';
+import { Injectable } from "@nestjs/common";
+import { CreateRoleDto } from "./dto/create-role.dto";
+import { UpdateRoleDto } from "./dto/update-role.dto";
+import { RoleRepo } from "./role.repository";
+import { ErrorHandler } from "shared/errorHandler.service";
+import { CREATED_SUCCESSFULLY, DELETED_SUCCESSFULLY, UPDATED_SUCCESSFULLY } from "messages";
 
 @Injectable()
 export class RoleService {
-  constructor(
-    private readonly roleRepo: RoleRepo,
-    private readonly errorHandler: ErrorHandler,
-  ) {}
+  constructor(private readonly roleRepo: RoleRepo, private readonly errorHandler: ErrorHandler) {}
 
   async create(createRoleDto: CreateRoleDto) {
     try {

@@ -7,7 +7,8 @@ const logger_service_1 = require("../shared/logger/logger.service");
 async function bootstrap() {
     const app = await core_1.NestFactory.create(app_module_1.AppModule, { cors: true });
     const logger = app.get(logger_service_1.Logger);
-    app.setGlobalPrefix('api/v1');
+    app.useLogger(logger);
+    app.setGlobalPrefix("api/v1");
     app.useGlobalPipes(new common_1.ValidationPipe({
         skipMissingProperties: false,
         whitelist: true,

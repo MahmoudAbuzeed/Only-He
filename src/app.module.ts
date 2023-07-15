@@ -13,7 +13,6 @@ import { JwtService } from "@nestjs/jwt";
 import { Logger } from "shared/logger/logger.service";
 import { LoggerMiddleware } from "shared/logger/logger.middleware";
 
-
 @Global()
 @Module({
   imports: [
@@ -39,6 +38,6 @@ import { LoggerMiddleware } from "shared/logger/logger.middleware";
 })
 export class AppModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer.apply(LoggerMiddleware).forRoutes('*');
+    consumer.apply(LoggerMiddleware).forRoutes("*");
   }
 }

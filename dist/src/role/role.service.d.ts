@@ -1,7 +1,7 @@
-import { CreateRoleDto } from './dto/create-role.dto';
-import { UpdateRoleDto } from './dto/update-role.dto';
-import { RoleRepo } from './role.repository';
-import { ErrorHandler } from 'shared/errorHandler.service';
+import { CreateRoleDto } from "./dto/create-role.dto";
+import { UpdateRoleDto } from "./dto/update-role.dto";
+import { RoleRepo } from "./role.repository";
+import { ErrorHandler } from "shared/errorHandler.service";
 export declare class RoleService {
     private readonly roleRepo;
     private readonly errorHandler;

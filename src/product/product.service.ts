@@ -1,20 +1,13 @@
-import { Injectable } from '@nestjs/common';
-import { CreateProductDto } from './dto/create-product.dto';
-import { UpdateProductDto } from './dto/update-product.dto';
-import { ProductRepo } from './product.repository';
-import { ErrorHandler } from 'shared/errorHandler.service';
-import {
-  CREATED_SUCCESSFULLY,
-  DELETED_SUCCESSFULLY,
-  UPDATED_SUCCESSFULLY,
-} from 'messages';
+import { Injectable } from "@nestjs/common";
+import { CreateProductDto } from "./dto/create-product.dto";
+import { UpdateProductDto } from "./dto/update-product.dto";
+import { ProductRepo } from "./product.repository";
+import { ErrorHandler } from "shared/errorHandler.service";
+import { CREATED_SUCCESSFULLY, DELETED_SUCCESSFULLY, UPDATED_SUCCESSFULLY } from "messages";
 
 @Injectable()
 export class ProductService {
-  constructor(
-    private readonly productRepo: ProductRepo,
-    private readonly errorHandler: ErrorHandler,
-  ) {}
+  constructor(private readonly productRepo: ProductRepo, private readonly errorHandler: ErrorHandler) {}
 
   async create(createProductDto: CreateProductDto) {
     try {

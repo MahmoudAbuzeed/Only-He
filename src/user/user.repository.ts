@@ -11,7 +11,7 @@ import { User } from "./entities/user.entity";
 export class UserRepo {
   constructor(
     @InjectRepository(User)
-    private userRepository: Repository<User>
+    private userRepository: Repository<User>,
   ) {}
 
   async create(createUserDto: CreateUserDto) {
