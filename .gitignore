@@ -2,4 +2,4 @@
 .env
 /src/uploads/*
 !/src/uploads/.gitkeep
-dist/
+/dist

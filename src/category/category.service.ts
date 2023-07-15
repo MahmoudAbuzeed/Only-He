@@ -16,9 +16,9 @@ export class CategoryService {
     private readonly errorHandler: ErrorHandler,
   ) {}
 
-  async create(createRoleDto: CreateCategoryDto) {
+  async create(createCategoryDto: CreateCategoryDto) {
     try {
-      await this.categoryRepo.create(createRoleDto);
+      await this.categoryRepo.create(createCategoryDto);
       return { message: CREATED_SUCCESSFULLY };
     } catch (error) {
       throw this.errorHandler.badRequest(error);
@@ -34,20 +34,20 @@ export class CategoryService {
   }
 
   async findOne(id: number) {
-    const role = await this.categoryRepo.findOne(id);
-    if (!role) throw this.errorHandler.notFound();
-    return role;
+    const category = await this.categoryRepo.findOne(id);
+    if (!category) throw this.errorHandler.notFound();
+    return category;
   }
 
-  async update(id: number, updateRoleDto: UpdateCategoryDto) {
-    const updatedRole = await this.categoryRepo.update(id, updateRoleDto);
-    if (updatedRole.affected == 0) throw this.errorHandler.notFound();
+  async update(id: number, updateCategoryDto: UpdateCategoryDto) {
+    const updatedCategory = await this.categoryRepo.update(id, updateCategoryDto);
+    if (updatedCategory.affected == 0) throw this.errorHandler.notFound();
     return { message: UPDATED_SUCCESSFULLY };
   }
 
   async remove(id: number) {
-    const deletedRole = await this.categoryRepo.remove(+id);
-    if (deletedRole.affected == 0) throw this.errorHandler.notFound();
+    const deletedCategory = await this.categoryRepo.remove(+id);
+    if (deletedCategory.affected == 0) throw this.errorHandler.notFound();
     return { message: DELETED_SUCCESSFULLY };
   }
 }

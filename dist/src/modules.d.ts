@@ -1,2 +1,2 @@
-import { UserModule } from "./user/user.module";
-export declare const modules: (typeof UserModule)[];
+import { ProductModule } from "./product/product.module";
+export declare const modules: (typeof ProductModule)[];
