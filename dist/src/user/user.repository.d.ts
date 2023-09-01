@@ -16,6 +16,7 @@ export declare class UserRepo {
         password: string;
         created_at: Date;
         updated_at: Date;
+        orders: import("../order/entities/order.entity").Order[];
     }>;
     findOne(id: number): Promise<User>;
     update(id: number, updateUserDto: UpdateUserDto): Promise<import("typeorm").UpdateResult>;
