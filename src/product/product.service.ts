@@ -3,7 +3,8 @@ import { CreateProductDto } from "./dto/create-product.dto";
 import { UpdateProductDto } from "./dto/update-product.dto";
 import { ProductRepo } from "./product.repository";
 import { ErrorHandler } from "shared/errorHandler.service";
-import { CREATED_SUCCESSFULLY, DELETED_SUCCESSFULLY, UPDATED_SUCCESSFULLY } from "messages";
+import { DELETED_SUCCESSFULLY, UPDATED_SUCCESSFULLY } from "messages";
+import { CustomError } from "shared/custom-error/custom-error";
 
 @Injectable()
 export class ProductService {
@@ -11,36 +12,31 @@ export class ProductService {
 
   async create(createProductDto: CreateProductDto) {
     try {
-      await this.productRepo.create(createProductDto);
-      return { message: CREATED_SUCCESSFULLY };
+      return await this.productRepo.create(createProductDto);
     } catch (error) {
-      throw this.errorHandler.badRequest(error);
+      throw new CustomError(400, error.message);
     }
   }
 
   async findAll() {
-    try {
-      return await this.productRepo.findAll();
-    } catch (error) {
-      throw this.errorHandler.badRequest(error);
-    }
+    return await this.productRepo.findAll();
   }
 
   async findOne(id: number) {
     const product = await this.productRepo.findOne(id);
-    if (!product) throw this.errorHandler.notFound();
+    if (!product) throw new CustomError(401, "Product Not Found");
     return product;
   }
 
   async update(id: number, updateProductDto: UpdateProductDto) {
     const updatedProduct = await this.productRepo.update(id, updateProductDto);
-    if (updatedProduct.affected == 0) throw this.errorHandler.notFound();
+    if (updatedProduct.affected == 0) throw new CustomError(401, "Product Not Found");
     return { message: UPDATED_SUCCESSFULLY };
   }
 
   async remove(id: number) {
     const deletedProduct = await this.productRepo.remove(+id);
-    if (deletedProduct.affected == 0) throw this.errorHandler.notFound();
+    if (deletedProduct.affected == 0) throw new CustomError(401, "Product Not Found");
     return { message: DELETED_SUCCESSFULLY };
   }
 }

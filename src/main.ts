@@ -14,9 +14,9 @@ async function bootstrap() {
     new ValidationPipe({
       skipMissingProperties: false,
       whitelist: true,
-      // forbidNonWhitelisted: process.env.NODE_ENV === 'development',
     }),
   );
+  app.useGlobalPipes(new ValidationPipe());
 
   await app.listen(3002);
 }

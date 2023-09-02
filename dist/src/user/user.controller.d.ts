@@ -5,9 +5,7 @@ import { SignInDto } from "./dto/signin.dto";
 export declare class UserController {
     private readonly userService;
     constructor(userService: UserService);
-    create(createUserDto: CreateUserDto): Promise<{
-        message: string;
-    }>;
+    create(createUserDto: CreateUserDto): Promise<CreateUserDto & import("./entities/user.entity").User>;
     findAll(): Promise<import("./entities/user.entity").User[]>;
     signIn(signInDto: SignInDto): Promise<{
         token: string;

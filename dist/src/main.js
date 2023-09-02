@@ -13,6 +13,7 @@ async function bootstrap() {
         skipMissingProperties: false,
         whitelist: true,
     }));
+    app.useGlobalPipes(new common_1.ValidationPipe());
     await app.listen(3002);
 }
 bootstrap();

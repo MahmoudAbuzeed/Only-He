@@ -1,10 +1,11 @@
 import { Injectable } from "@nestjs/common";
 
-import { CREATED_SUCCESSFULLY, DELETED_SUCCESSFULLY, UPDATED_SUCCESSFULLY } from "messages";
+import { DELETED_SUCCESSFULLY, UPDATED_SUCCESSFULLY } from "messages";
 import { ErrorHandler } from "shared/errorHandler.service";
 import { CreateOrderItemDto } from "./dto/create-order-item.dto";
 import { UpdateOrderItemDto } from "./dto/update-order-item.dto";
 import { OrderItemRepo } from "./order-item.repository";
+import { CustomError } from "shared/custom-error/custom-error";
 
 @Injectable()
 export class OrderItemService {
@@ -12,10 +13,9 @@ export class OrderItemService {
 
   async create(createOrderItemDto: CreateOrderItemDto) {
     try {
-      await this.orderItemRepo.create(createOrderItemDto);
-      return { message: CREATED_SUCCESSFULLY };
+      return await this.orderItemRepo.create(createOrderItemDto);
     } catch (error) {
-      throw this.errorHandler.badRequest(error);
+      throw new CustomError(400, error.message);
     }
   }
 
@@ -23,7 +23,7 @@ export class OrderItemService {
     try {
       return this.orderItemRepo.createMany(createOrderItemDto);
     } catch (error) {
-      throw this.errorHandler.badRequest(error);
+      throw new CustomError(400, error.message);
     }
   }
 
@@ -33,19 +33,19 @@ export class OrderItemService {
 
   async findOne(id: number) {
     const OrderItem = await this.orderItemRepo.findOne(id);
-    if (!OrderItem) throw this.errorHandler.notFound();
+    if (!OrderItem) throw new CustomError(401, "Order Items Not Found");
     return OrderItem;
   }
 
   async update(id: number, updateOrderItemDto: UpdateOrderItemDto) {
     const updatedOrderItem = await this.orderItemRepo.update(id, updateOrderItemDto);
-    if (updatedOrderItem.affected == 0) throw this.errorHandler.notFound();
+    if (updatedOrderItem.affected == 0) throw new CustomError(401, "Order Items Not Found");
     return { message: UPDATED_SUCCESSFULLY };
   }
 
   async remove(id: number) {
     const deletedOrderItem = await this.orderItemRepo.remove(+id);
-    if (deletedOrderItem.affected == 0) throw this.errorHandler.notFound();
+    if (deletedOrderItem.affected == 0) throw new CustomError(401, "Order Items Not Found");
     return { message: DELETED_SUCCESSFULLY };
   }
 }

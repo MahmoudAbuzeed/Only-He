@@ -20,6 +20,7 @@ const errorHandler_service_1 = require("../../shared/errorHandler.service");
 const user_repository_1 = require("./user.repository");
 const jwt_1 = require("@nestjs/jwt");
 const logger_service_1 = require("../../shared/logger/logger.service");
+const custom_error_1 = require("../../shared/custom-error/custom-error");
 let UserService = class UserService {
     constructor(userRepo, jwtService, errorHandler, logger) {
         this.userRepo = userRepo;
@@ -36,11 +37,10 @@ let UserService = class UserService {
         const hashedPassword = await this.hashPassword(createUserDto.password);
         createUserDto.password = hashedPassword;
         try {
-            await this.userRepo.create(createUserDto);
-            return { message: index_1.CREATED_SUCCESSFULLY };
+            return await this.userRepo.create(createUserDto);
         }
         catch (error) {
-            throw this.errorHandler.duplicateValue(error);
+            throw new custom_error_1.CustomError(400, error.message);
         }
     }
     async findByEmail(signInDto) {
@@ -63,21 +63,16 @@ let UserService = class UserService {
         }
     }
     async findAll() {
-        try {
-            const users = await this.userRepo.findAll();
-            for (const user of users) {
-                user.password = undefined;
-            }
-            return users;
+        const users = await this.userRepo.findAll();
+        for (const user of users) {
+            delete user.password;
         }
-        catch (error) {
-            throw this.errorHandler.badRequest(error);
-        }
+        return users;
     }
     async findOne(id) {
         const user = await this.userRepo.findOne(id);
         if (!user)
-            throw this.errorHandler.notFound();
+            throw new custom_error_1.CustomError(401, "User Not Found");
         delete user.password;
         return user;
     }
@@ -86,13 +81,13 @@ let UserService = class UserService {
         updateUserDto.password = hashedPassword;
         const updatedUser = await this.userRepo.update(id, updateUserDto);
         if (updatedUser.affected == 0)
-            throw this.errorHandler.notFound();
+            throw new custom_error_1.CustomError(401, "User Not Found");
         return { message: index_1.UPDATED_SUCCESSFULLY };
     }
     async remove(id) {
         const deletedUser = await this.userRepo.remove(+id);
         if (deletedUser.affected == 0)
-            throw this.errorHandler.notFound();
+            throw new custom_error_1.CustomError(401, "User Not Found");
         return { message: index_1.DELETED_SUCCESSFULLY };
     }
 };

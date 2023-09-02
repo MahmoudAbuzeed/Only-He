@@ -14,6 +14,7 @@ const common_1 = require("@nestjs/common");
 const role_repository_1 = require("./role.repository");
 const errorHandler_service_1 = require("../../shared/errorHandler.service");
 const messages_1 = require("../../messages");
+const custom_error_1 = require("../../shared/custom-error/custom-error");
 let RoleService = class RoleService {
     constructor(roleRepo, errorHandler) {
         this.roleRepo = roleRepo;
@@ -21,37 +22,31 @@ let RoleService = class RoleService {
     }
     async create(createRoleDto) {
         try {
-            await this.roleRepo.create(createRoleDto);
-            return { message: messages_1.CREATED_SUCCESSFULLY };
+            return await this.roleRepo.create(createRoleDto);
         }
         catch (error) {
-            throw this.errorHandler.badRequest(error);
+            throw new custom_error_1.CustomError(400, error.message);
         }
     }
     async findAll() {
-        try {
-            return await this.roleRepo.findAll();
-        }
-        catch (error) {
-            throw this.errorHandler.badRequest(error);
-        }
+        return await this.roleRepo.findAll();
     }
     async findOne(id) {
         const role = await this.roleRepo.findOne(id);
         if (!role)
-            throw this.errorHandler.notFound();
+            throw new custom_error_1.CustomError(401, "Role Not Found");
         return role;
     }
     async update(id, updateRoleDto) {
         const updatedRole = await this.roleRepo.update(id, updateRoleDto);
         if (updatedRole.affected == 0)
-            throw this.errorHandler.notFound();
+            throw new custom_error_1.CustomError(401, "Role Not Found");
         return { message: messages_1.UPDATED_SUCCESSFULLY };
     }
     async remove(id) {
         const deletedRole = await this.roleRepo.remove(+id);
         if (deletedRole.affected == 0)
-            throw this.errorHandler.notFound();
+            throw new custom_error_1.CustomError(401, "Role Not Found");
         return { message: messages_1.DELETED_SUCCESSFULLY };
     }
 };

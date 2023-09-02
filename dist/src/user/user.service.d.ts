@@ -12,9 +12,7 @@ export declare class UserService {
     private logger;
     constructor(userRepo: UserRepo, jwtService: JwtService, errorHandler: ErrorHandler, logger: Logger);
     hashPassword(password: string): Promise<string>;
-    create(createUserDto: CreateUserDto): Promise<{
-        message: string;
-    }>;
+    create(createUserDto: CreateUserDto): Promise<CreateUserDto & import("./entities/user.entity").User>;
     findByEmail(signInDto: SignInDto): Promise<{
         token: string;
         first_name: string;

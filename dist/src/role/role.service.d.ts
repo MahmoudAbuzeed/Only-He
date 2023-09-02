@@ -6,9 +6,7 @@ export declare class RoleService {
     private readonly roleRepo;
     private readonly errorHandler;
     constructor(roleRepo: RoleRepo, errorHandler: ErrorHandler);
-    create(createRoleDto: CreateRoleDto): Promise<{
-        message: string;
-    }>;
+    create(createRoleDto: CreateRoleDto): Promise<CreateRoleDto & import("./entities/role.entity").Role>;
     findAll(): Promise<import("./entities/role.entity").Role[]>;
     findOne(id: number): Promise<import("./entities/role.entity").Role>;
     update(id: number, updateRoleDto: UpdateRoleDto): Promise<{

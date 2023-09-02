@@ -3,7 +3,8 @@ import { CreateRoleDto } from "./dto/create-role.dto";
 import { UpdateRoleDto } from "./dto/update-role.dto";
 import { RoleRepo } from "./role.repository";
 import { ErrorHandler } from "shared/errorHandler.service";
-import { CREATED_SUCCESSFULLY, DELETED_SUCCESSFULLY, UPDATED_SUCCESSFULLY } from "messages";
+import { DELETED_SUCCESSFULLY, UPDATED_SUCCESSFULLY } from "messages";
+import { CustomError } from "shared/custom-error/custom-error";
 
 @Injectable()
 export class RoleService {
@@ -11,36 +12,31 @@ export class RoleService {
 
   async create(createRoleDto: CreateRoleDto) {
     try {
-      await this.roleRepo.create(createRoleDto);
-      return { message: CREATED_SUCCESSFULLY };
+      return await this.roleRepo.create(createRoleDto);
     } catch (error) {
-      throw this.errorHandler.badRequest(error);
+      throw new CustomError(400, error.message);
     }
   }
 
   async findAll() {
-    try {
-      return await this.roleRepo.findAll();
-    } catch (error) {
-      throw this.errorHandler.badRequest(error);
-    }
+    return await this.roleRepo.findAll();
   }
 
   async findOne(id: number) {
     const role = await this.roleRepo.findOne(id);
-    if (!role) throw this.errorHandler.notFound();
+    if (!role) throw new CustomError(401, "Role Not Found");
     return role;
   }
 
   async update(id: number, updateRoleDto: UpdateRoleDto) {
     const updatedRole = await this.roleRepo.update(id, updateRoleDto);
-    if (updatedRole.affected == 0) throw this.errorHandler.notFound();
+    if (updatedRole.affected == 0) throw new CustomError(401, "Role Not Found");
     return { message: UPDATED_SUCCESSFULLY };
   }
 
   async remove(id: number) {
     const deletedRole = await this.roleRepo.remove(+id);
-    if (deletedRole.affected == 0) throw this.errorHandler.notFound();
+    if (deletedRole.affected == 0) throw new CustomError(401, "Role Not Found");
     return { message: DELETED_SUCCESSFULLY };
   }
 }
