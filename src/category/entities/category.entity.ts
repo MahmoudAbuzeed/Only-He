@@ -18,6 +18,8 @@ export class Category {
   @UpdateDateColumn()
   updated_at: Date;
 
-  @OneToMany(() => Product, (product) => product.category)
+  @OneToMany(() => Product, (product) => product.category, {
+    cascade: true,
+  })
   products: Product[];
 }

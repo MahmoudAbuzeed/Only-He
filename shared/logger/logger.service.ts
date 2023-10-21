@@ -1,5 +1,5 @@
-import { Injectable, LoggerService } from '@nestjs/common';
-import { createLogger, transports, format } from 'winston';
+import { Injectable, LoggerService } from "@nestjs/common";
+import { createLogger, transports, format } from "winston";
 
 @Injectable()
 export class Logger implements LoggerService {
@@ -7,13 +7,11 @@ export class Logger implements LoggerService {
 
   constructor() {
     this.logger = createLogger({
-      transports: [
-        new transports.Console(),
-      ],
+      transports: [new transports.Console()],
       format: format.combine(
         format.timestamp(),
-        format.printf(({ level, message, timestamp }) => `${timestamp} [${level.toUpperCase()}] - ${message}`)
-      )
+        format.printf(({ level, message, timestamp }) => `${timestamp} [${level.toUpperCase()}] - ${message}`),
+      ),
     });
   }
 

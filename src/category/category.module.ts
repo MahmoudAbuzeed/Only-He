@@ -5,11 +5,11 @@ import { CategoryService } from "./category.service";
 import { CategoryController } from "./category.controller";
 import { Category } from "./entities/category.entity";
 import { CategoryRepo } from "./category.repository";
-import { ErrorHandler } from "shared/errorHandler.service";
 
 @Module({
   imports: [TypeOrmModule.forFeature([Category])],
   controllers: [CategoryController],
-  providers: [CategoryService, CategoryRepo, ErrorHandler],
+  providers: [CategoryService, CategoryRepo],
+  exports: [CategoryService, CategoryRepo],
 })
 export class CategoryModule {}

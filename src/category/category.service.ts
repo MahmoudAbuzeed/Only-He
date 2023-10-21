@@ -2,13 +2,11 @@ import { Injectable } from "@nestjs/common";
 import { CreateCategoryDto } from "./dto/create-category.dto";
 import { UpdateCategoryDto } from "./dto/update-category.dto";
 import { CategoryRepo } from "./category.repository";
-import { ErrorHandler } from "shared/errorHandler.service";
-import { DELETED_SUCCESSFULLY, UPDATED_SUCCESSFULLY } from "messages";
 import { CustomError } from "shared/custom-error/custom-error";
 
 @Injectable()
 export class CategoryService {
-  constructor(private readonly categoryRepo: CategoryRepo, private readonly errorHandler: ErrorHandler) {}
+  constructor(private readonly categoryRepo: CategoryRepo) {}
 
   async create(createCategoryDto: CreateCategoryDto) {
     await this.checkIfCategoryExists(createCategoryDto.name);
@@ -35,12 +33,12 @@ export class CategoryService {
   async update(id: number, updateCategoryDto: UpdateCategoryDto) {
     const updatedCategory = await this.categoryRepo.update(id, updateCategoryDto);
     if (updatedCategory.affected == 0) throw new CustomError(401, "Category Not Found!");
-    return { message: UPDATED_SUCCESSFULLY };
+    return await this.findOne(id);
   }
 
   async remove(id: number) {
     const deletedCategory = await this.categoryRepo.remove(+id);
     if (deletedCategory.affected == 0) throw new CustomError(401, "Category Not Found!");
-    return { message: DELETED_SUCCESSFULLY };
+    return id;
   }
 }

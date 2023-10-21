@@ -5,11 +5,12 @@ import { ProductService } from "./product.service";
 import { ProductController } from "./product.controller";
 import { Product } from "./entities/product.entity";
 import { ProductRepo } from "./product.repository";
-import { ErrorHandler } from "shared/errorHandler.service";
+import { CategoryModule } from "src/category/category.module";
+import { CategoryService } from "src/category/category.service";
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Product])],
+  imports: [TypeOrmModule.forFeature([Product]), CategoryModule],
   controllers: [ProductController],
-  providers: [ProductService, ProductRepo, ErrorHandler],
+  providers: [ProductService, ProductRepo, CategoryService],
 })
 export class ProductModule {}
