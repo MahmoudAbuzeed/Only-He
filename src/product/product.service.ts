@@ -21,7 +21,11 @@ export class ProductService {
   }
 
   async findAll() {
-    return await this.productRepo.findAll();
+    const products = await this.productRepo.findAll();
+    products.map(async (product: any) => {
+      product.category = product?.category?.name;
+    });
+    return products;
   }
 
   async findOne(id: number) {

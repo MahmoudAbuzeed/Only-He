@@ -19,7 +19,7 @@ export class ProductRepo {
   }
 
   async findAll() {
-    return await this.productRepository.find();
+    return await this.productRepository.find({ relations: ["category"] });
   }
 
   async findOne(id: number) {
