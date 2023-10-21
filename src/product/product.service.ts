@@ -15,6 +15,7 @@ export class ProductService {
       const product = await this.productRepo.create(createProductDto);
       const category = await this.categoryService.findOne(product.category);
       product.category = category.name;
+      return product;
     } catch (error) {
       throw new CustomError(400, error.message);
     }
@@ -37,12 +38,12 @@ export class ProductService {
   async update(id: number, updateProductDto: UpdateProductDto) {
     const updatedProduct = await this.productRepo.update(id, updateProductDto);
     if (updatedProduct.affected == 0) throw new CustomError(401, "Product Not Found");
-    return { message: UPDATED_SUCCESSFULLY };
+    return await this.findOne(id);
   }
 
   async remove(id: number) {
     const deletedProduct = await this.productRepo.remove(+id);
     if (deletedProduct.affected == 0) throw new CustomError(401, "Product Not Found");
-    return { message: DELETED_SUCCESSFULLY };
+    return id;
   }
 }
