@@ -1,2 +1,2 @@
-import { CategoryModule } from "./category/category.module";
-export declare const modules: (typeof CategoryModule)[];
+import { OrderItemModule } from "./orderItem/order-item.module";
+export declare const modules: (typeof OrderItemModule)[];

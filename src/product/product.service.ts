@@ -3,7 +3,6 @@ import { Injectable } from "@nestjs/common";
 import { CreateProductDto } from "./dto/create-product.dto";
 import { UpdateProductDto } from "./dto/update-product.dto";
 import { ProductRepo } from "./product.repository";
-import { DELETED_SUCCESSFULLY, UPDATED_SUCCESSFULLY } from "messages";
 import { CustomError } from "shared/custom-error/custom-error";
 
 @Injectable()

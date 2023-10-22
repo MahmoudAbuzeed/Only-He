@@ -18,7 +18,7 @@ export class OrderRepo {
   }
 
   async findAll() {
-    return await this.OrderRepository.find();
+    return await this.OrderRepository.find({ relations: ["user"] });
   }
 
   async findOne(id: number) {

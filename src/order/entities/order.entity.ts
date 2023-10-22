@@ -4,12 +4,10 @@ import {
   PrimaryGeneratedColumn,
   CreateDateColumn,
   UpdateDateColumn,
-  OneToMany,
   ManyToOne,
   JoinColumn,
 } from "typeorm";
 import { User } from "src/user/entities/user.entity";
-import { OrderItem } from "src/orderItem/entities/order-item.entity";
 
 export enum OrderStatus {
   Pending = "PENDING",

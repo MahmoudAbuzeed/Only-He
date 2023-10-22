@@ -28,7 +28,11 @@ export class OrderService {
   }
 
   async findAll() {
-    return await this.orderRepo.findAll();
+    const orders = await this.orderRepo.findAll();
+    orders.map((order: any) => {
+      order.user = order?.user?.user_name;
+    });
+    return orders;
   }
 
   async findOne(id: number) {
