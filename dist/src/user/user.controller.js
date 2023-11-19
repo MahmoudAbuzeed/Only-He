@@ -17,7 +17,6 @@ const common_1 = require("@nestjs/common");
 const user_service_1 = require("./user.service");
 const create_user_dto_1 = require("./dto/create-user.dto");
 const update_user_dto_1 = require("./dto/update-user.dto");
-const signin_dto_1 = require("./dto/signin.dto");
 let UserController = class UserController {
     constructor(userService) {
         this.userService = userService;
@@ -28,11 +27,8 @@ let UserController = class UserController {
     findAll() {
         return this.userService.findAll();
     }
-    signIn(signInDto) {
-        return this.userService.findByEmail(signInDto);
-    }
     findOne(id) {
-        return this.userService.findOne(+id);
+        return this.userService.findOneById(+id);
     }
     update(id, updateUserDto) {
         return this.userService.update(+id, updateUserDto);
@@ -54,13 +50,6 @@ __decorate([
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", void 0)
 ], UserController.prototype, "findAll", null);
-__decorate([
-    (0, common_1.Post)("signIn"),
-    __param(0, (0, common_1.Body)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [signin_dto_1.SignInDto]),
-    __metadata("design:returntype", void 0)
-], UserController.prototype, "signIn", null);
 __decorate([
     (0, common_1.Get)(":id"),
     __param(0, (0, common_1.Param)("id")),

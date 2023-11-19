@@ -17,13 +17,9 @@ export class UserController {
   findAll() {
     return this.userService.findAll();
   }
-  @Post("signIn")
-  signIn(@Body() signInDto: SignInDto) {
-    return this.userService.findByEmail(signInDto);
-  }
   @Get(":id")
   findOne(@Param("id") id: string) {
-    return this.userService.findOne(+id);
+    return this.userService.findOneById(+id);
   }
 
   @Patch(":id")

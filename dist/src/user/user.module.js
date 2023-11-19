@@ -23,6 +23,7 @@ UserModule = __decorate([
         imports: [typeorm_1.TypeOrmModule.forFeature([user_entity_1.User])],
         controllers: [user_controller_1.UserController],
         providers: [user_service_1.UserService, user_repository_1.UserRepo, jwt_1.JwtService, errorHandler_service_1.ErrorHandler, logger_service_1.Logger],
+        exports: [user_service_1.UserService, user_repository_1.UserRepo],
     })
 ], UserModule);
 exports.UserModule = UserModule;

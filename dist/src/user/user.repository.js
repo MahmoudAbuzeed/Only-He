@@ -17,6 +17,7 @@ const typeorm_1 = require("@nestjs/typeorm");
 const common_1 = require("@nestjs/common");
 const typeorm_2 = require("typeorm");
 const user_entity_1 = require("./entities/user.entity");
+const custom_error_1 = require("../../shared/custom-error/custom-error");
 let UserRepo = class UserRepo {
     constructor(userRepository) {
         this.userRepository = userRepository;
@@ -28,8 +29,7 @@ let UserRepo = class UserRepo {
         return await this.userRepository.find();
     }
     async getByEmail(email) {
-        const user = await this.userRepository.findOne({ email });
-        return Object.assign({}, user);
+        return await this.userRepository.findOne({ email });
     }
     async findOne(id) {
         return await this.userRepository.findOne(id);
@@ -39,6 +39,20 @@ let UserRepo = class UserRepo {
     }
     async remove(id) {
         return await this.userRepository.delete({ id });
+    }
+    async invalidateRefreshToken(userId) {
+        const user = await this.userRepository.findOne(userId);
+        if (!user)
+            throw new custom_error_1.CustomError(401, "User Not Found");
+        user.token = null;
+        await this.userRepository.save(user);
+    }
+    async saveRefreshToken(userId, refreshToken) {
+        const user = await this.userRepository.findOne(userId);
+        if (!user)
+            throw new custom_error_1.CustomError(401, "User Not Found");
+        user.token = refreshToken;
+        await this.userRepository.save(user);
     }
 };
 UserRepo = __decorate([

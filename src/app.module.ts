@@ -16,10 +16,13 @@ import { LoggerMiddleware } from "shared/logger/logger.middleware";
 @Global()
 @Module({
   imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
     ServeStaticModule.forRoot({
       rootPath: join(__dirname, "..", "uploadedFiles"),
     }),
-    ConfigModule.forRoot(),
+
     TypeOrmModule.forRoot({
       type: "mysql",
       // host: 'mysqldb',

@@ -1,7 +1,7 @@
 import { Inject, Injectable } from "@nestjs/common";
 import * as bcrypt from "bcrypt";
 
-import { CREATED_SUCCESSFULLY, DELETED_SUCCESSFULLY, UPDATED_SUCCESSFULLY } from "../../messages/index";
+import { DELETED_SUCCESSFULLY, UPDATED_SUCCESSFULLY } from "../../messages/index";
 import { ErrorHandler } from "shared/errorHandler.service";
 
 import { CreateUserDto } from "./dto/create-user.dto";
@@ -9,7 +9,6 @@ import { UpdateUserDto } from "./dto/update-user.dto";
 import { SignInDto } from "./dto/signin.dto";
 import { UserRepo } from "./user.repository";
 import { JwtService } from "@nestjs/jwt";
-import { Logger } from "shared/logger/logger.service";
 import { CustomError } from "shared/custom-error/custom-error";
 
 @Injectable()
@@ -18,7 +17,6 @@ export class UserService {
     private readonly userRepo: UserRepo,
     private readonly jwtService: JwtService,
     private readonly errorHandler: ErrorHandler,
-    @Inject(Logger) private logger: Logger,
   ) {}
 
   async hashPassword(password: string) {
@@ -27,10 +25,10 @@ export class UserService {
     return hashedPassword;
   }
 
-  async create(createUserDto: CreateUserDto) { //TODO: TO be refactored
-    const hashedPassword = await this.hashPassword(createUserDto.password);
-    createUserDto.password = hashedPassword;
+  async create(createUserDto: CreateUserDto) {
     try {
+      const user = await this.userRepo.getByEmail(createUserDto.email);
+      if (user) throw new CustomError(400, "Email already exists");
       return await this.userRepo.create(createUserDto);
     } catch (error) {
       throw new CustomError(400, error.message);
@@ -65,8 +63,15 @@ export class UserService {
     return users;
   }
 
-  async findOne(id: number) {
+  async findOneById(id: number) {
     const user = await this.userRepo.findOne(id);
+    if (!user) throw new CustomError(401, "User Not Found");
+    delete user.password;
+    return user;
+  }
+
+  async findOneByEmail(email: string) {
+    const user = await this.userRepo.getByEmail(email);
     if (!user) throw new CustomError(401, "User Not Found");
     delete user.password;
     return user;
@@ -84,5 +89,13 @@ export class UserService {
     const deletedUser = await this.userRepo.remove(+id);
     if (deletedUser.affected == 0) throw new CustomError(401, "User Not Found");
     return { message: DELETED_SUCCESSFULLY };
+  }
+
+  async saveRefreshToken(userId: number, refreshToken: string) {
+    await this.userRepo.saveRefreshToken(userId, refreshToken);
+  }
+
+  async invalidateRefreshToken(userId: number) {
+    await this.userRepo.invalidateRefreshToken(userId);
   }
 }

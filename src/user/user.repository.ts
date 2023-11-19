@@ -6,6 +6,7 @@ import { CreateUserDto } from "./dto/create-user.dto";
 import { UpdateUserDto } from "./dto/update-user.dto";
 
 import { User } from "./entities/user.entity";
+import { CustomError } from "shared/custom-error/custom-error";
 
 @Injectable()
 export class UserRepo {
@@ -23,11 +24,7 @@ export class UserRepo {
   }
 
   async getByEmail(email: string) {
-    const user = await this.userRepository.findOne({ email });
-
-    return {
-      ...user,
-    };
+    return await this.userRepository.findOne({ email });
   }
 
   async findOne(id: number) {
@@ -40,5 +37,19 @@ export class UserRepo {
 
   async remove(id: number) {
     return await this.userRepository.delete({ id });
+  }
+
+  async invalidateRefreshToken(userId: number) {
+    const user = await this.userRepository.findOne(userId);
+    if (!user) throw new CustomError(401, "User Not Found");
+    user.token = null;
+    await this.userRepository.save(user);
+  }
+
+  async saveRefreshToken(userId: number, refreshToken: string) {
+    const user = await this.userRepository.findOne(userId);
+    if (!user) throw new CustomError(401, "User Not Found");
+    user.token = refreshToken;
+    await this.userRepository.save(user);
   }
 }

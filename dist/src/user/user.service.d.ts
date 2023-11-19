@@ -4,13 +4,11 @@ import { UpdateUserDto } from "./dto/update-user.dto";
 import { SignInDto } from "./dto/signin.dto";
 import { UserRepo } from "./user.repository";
 import { JwtService } from "@nestjs/jwt";
-import { Logger } from "shared/logger/logger.service";
 export declare class UserService {
     private readonly userRepo;
     private readonly jwtService;
     private readonly errorHandler;
-    private logger;
-    constructor(userRepo: UserRepo, jwtService: JwtService, errorHandler: ErrorHandler, logger: Logger);
+    constructor(userRepo: UserRepo, jwtService: JwtService, errorHandler: ErrorHandler);
     hashPassword(password: string): Promise<string>;
     create(createUserDto: CreateUserDto): Promise<CreateUserDto & import("./entities/user.entity").User>;
     findByEmail(signInDto: SignInDto): Promise<{
@@ -22,11 +20,14 @@ export declare class UserService {
         id: number;
     }>;
     findAll(): Promise<import("./entities/user.entity").User[]>;
-    findOne(id: number): Promise<import("./entities/user.entity").User>;
+    findOneById(id: number): Promise<import("./entities/user.entity").User>;
+    findOneByEmail(email: string): Promise<import("./entities/user.entity").User>;
     update(id: number, updateUserDto: UpdateUserDto): Promise<{
         message: string;
     }>;
     remove(id: number): Promise<{
         message: string;
     }>;
+    saveRefreshToken(userId: number, refreshToken: string): Promise<void>;
+    invalidateRefreshToken(userId: number): Promise<void>;
 }

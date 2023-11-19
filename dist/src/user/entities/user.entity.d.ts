@@ -4,6 +4,7 @@ export declare class User {
     first_name: string;
     last_name: string;
     user_name: string;
+    token: string;
     email: string;
     password: string;
     created_at: Date;

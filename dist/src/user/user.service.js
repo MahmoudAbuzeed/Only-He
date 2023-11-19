@@ -8,9 +8,6 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
-var __param = (this && this.__param) || function (paramIndex, decorator) {
-    return function (target, key) { decorator(target, key, paramIndex); }
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UserService = void 0;
 const common_1 = require("@nestjs/common");
@@ -19,14 +16,12 @@ const index_1 = require("../../messages/index");
 const errorHandler_service_1 = require("../../shared/errorHandler.service");
 const user_repository_1 = require("./user.repository");
 const jwt_1 = require("@nestjs/jwt");
-const logger_service_1 = require("../../shared/logger/logger.service");
 const custom_error_1 = require("../../shared/custom-error/custom-error");
 let UserService = class UserService {
-    constructor(userRepo, jwtService, errorHandler, logger) {
+    constructor(userRepo, jwtService, errorHandler) {
         this.userRepo = userRepo;
         this.jwtService = jwtService;
         this.errorHandler = errorHandler;
-        this.logger = logger;
     }
     async hashPassword(password) {
         const saltOrRounds = 10;
@@ -34,9 +29,10 @@ let UserService = class UserService {
         return hashedPassword;
     }
     async create(createUserDto) {
-        const hashedPassword = await this.hashPassword(createUserDto.password);
-        createUserDto.password = hashedPassword;
         try {
+            const user = await this.userRepo.getByEmail(createUserDto.email);
+            if (user)
+                throw new custom_error_1.CustomError(400, "Email already exists");
             return await this.userRepo.create(createUserDto);
         }
         catch (error) {
@@ -69,8 +65,15 @@ let UserService = class UserService {
         }
         return users;
     }
-    async findOne(id) {
+    async findOneById(id) {
         const user = await this.userRepo.findOne(id);
+        if (!user)
+            throw new custom_error_1.CustomError(401, "User Not Found");
+        delete user.password;
+        return user;
+    }
+    async findOneByEmail(email) {
+        const user = await this.userRepo.getByEmail(email);
         if (!user)
             throw new custom_error_1.CustomError(401, "User Not Found");
         delete user.password;
@@ -90,14 +93,18 @@ let UserService = class UserService {
             throw new custom_error_1.CustomError(401, "User Not Found");
         return { message: index_1.DELETED_SUCCESSFULLY };
     }
+    async saveRefreshToken(userId, refreshToken) {
+        await this.userRepo.saveRefreshToken(userId, refreshToken);
+    }
+    async invalidateRefreshToken(userId) {
+        await this.userRepo.invalidateRefreshToken(userId);
+    }
 };
 UserService = __decorate([
     (0, common_1.Injectable)(),
-    __param(3, (0, common_1.Inject)(logger_service_1.Logger)),
     __metadata("design:paramtypes", [user_repository_1.UserRepo,
         jwt_1.JwtService,
-        errorHandler_service_1.ErrorHandler,
-        logger_service_1.Logger])
+        errorHandler_service_1.ErrorHandler])
 ], UserService);
 exports.UserService = UserService;
 //# sourceMappingURL=user.service.js.map

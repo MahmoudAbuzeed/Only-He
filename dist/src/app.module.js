@@ -28,10 +28,12 @@ AppModule = __decorate([
     (0, common_1.Global)(),
     (0, common_1.Module)({
         imports: [
+            config_1.ConfigModule.forRoot({
+                isGlobal: true,
+            }),
             serve_static_1.ServeStaticModule.forRoot({
                 rootPath: (0, path_1.join)(__dirname, "..", "uploadedFiles"),
             }),
-            config_1.ConfigModule.forRoot(),
             typeorm_1.TypeOrmModule.forRoot({
                 type: "mysql",
                 host: process.env.DATABASE_HOST,

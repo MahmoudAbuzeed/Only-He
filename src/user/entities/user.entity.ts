@@ -15,6 +15,9 @@ export class User {
   @Column({ length: 40 })
   user_name: string;
 
+  @Column({ nullable: true })
+  token: string;
+
   @Column({ unique: true })
   email: string;
 

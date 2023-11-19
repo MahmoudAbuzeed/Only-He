@@ -7,5 +7,14 @@ const category_module_1 = require("./category/category.module");
 const product_module_1 = require("./product/product.module");
 const order_module_1 = require("./order/order.module");
 const order_item_module_1 = require("./orderItem/order-item.module");
-exports.modules = [user_module_1.UserModule, role_module_1.RoleModule, category_module_1.CategoryModule, product_module_1.ProductModule, order_module_1.OrderModule, order_item_module_1.OrderItemModule];
+const auth_module_1 = require("./authentication/auth.module");
+exports.modules = [
+    user_module_1.UserModule,
+    role_module_1.RoleModule,
+    category_module_1.CategoryModule,
+    product_module_1.ProductModule,
+    order_module_1.OrderModule,
+    order_item_module_1.OrderItemModule,
+    auth_module_1.AuthModule,
+];
 //# sourceMappingURL=modules.js.map
