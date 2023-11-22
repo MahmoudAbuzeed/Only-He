@@ -31,6 +31,10 @@ export class OrderItemService {
     return await this.orderItemRepo.findAll();
   }
 
+  async findWithOption(options: any) {
+    return await this.orderItemRepo.findWithOption(options);
+  }
+
   async findOne(id: number) {
     const OrderItem = await this.orderItemRepo.findOne(id);
     if (!OrderItem) throw new CustomError(401, "Order Items Not Found");

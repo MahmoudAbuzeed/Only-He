@@ -33,4 +33,8 @@ export class ProductRepo {
   async remove(id: number) {
     return await this.productRepository.delete({ id });
   }
+
+  async findWithOption(options: any) {
+    return await this.productRepository.find(options);
+  }
 }

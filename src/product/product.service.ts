@@ -45,4 +45,9 @@ export class ProductService {
     if (deletedProduct.affected == 0) throw new CustomError(401, "Product Not Found");
     return id;
   }
+
+  async findWithOption(options: any) {
+    console.log(options.where);
+    return await this.productRepo.findWithOption(options);
+  }
 }

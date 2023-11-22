@@ -39,4 +39,5 @@ export class Order {
   user: User;
 
   userId: number;
+  orderItems: any;
 }

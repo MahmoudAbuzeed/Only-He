@@ -10,9 +10,10 @@ import { OrderItemService } from "src/orderItem/order-item.service";
 import { OrderItemModule } from "src/orderItem/order-item.module";
 import { OrderItem } from "src/orderItem/entities/order-item.entity";
 import { OrderItemRepo } from "src/orderItem/order-item.repository";
+import { ProductModule } from "src/product/product.module";
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Order, OrderItem]), OrderItemModule],
+  imports: [TypeOrmModule.forFeature([Order, OrderItem]), OrderItemModule, ProductModule],
   controllers: [OrderController],
   providers: [OrderService, OrderRepo, ErrorHandler, OrderItemService, OrderItemRepo],
 })

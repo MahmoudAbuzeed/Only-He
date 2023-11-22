@@ -1,19 +1,20 @@
 import { Injectable } from "@nestjs/common";
+import { In } from "typeorm";
 
 import { DELETED_SUCCESSFULLY, UPDATED_SUCCESSFULLY } from "messages";
-import { ErrorHandler } from "shared/errorHandler.service";
 import { CreateOrderDto } from "./dto/create-order.dto";
 import { UpdateOrderDto } from "./dto/update-order.dto";
 import { OrderRepo } from "./order.repository";
 import { OrderItemService } from "src/orderItem/order-item.service";
 import { CustomError } from "shared/custom-error/custom-error";
+import { ProductService } from "src/product/product.service";
 
 @Injectable()
 export class OrderService {
   constructor(
     private readonly orderRepo: OrderRepo,
     private readonly orderItemService: OrderItemService,
-    private readonly errorHandler: ErrorHandler,
+    private readonly productService: ProductService,
   ) {}
 
   async create(createOrderDto: CreateOrderDto) {
@@ -36,9 +37,17 @@ export class OrderService {
   }
 
   async findOne(id: number) {
-    const Order = await this.orderRepo.findOne(id);
-    if (!Order) throw new CustomError(401, "Order Not Found");
-    return Order;
+    const order = await this.orderRepo.findOne(id);
+    order.user = order?.user?.user_name as any;
+    const orderItemIds = await this.orderItemService.findWithOption({ where: { orderId: id } });
+    const orderItems = await this.productService.findWithOption({
+      where: {
+        id: In(orderItemIds.map((item) => item.productId)),
+      },
+    });
+    order.orderItems = orderItems;
+    if (!order) throw new CustomError(401, "Order Not Found");
+    return order;
   }
 
   async update(id: number, updateOrderDto: UpdateOrderDto) {

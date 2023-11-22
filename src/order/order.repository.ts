@@ -22,7 +22,7 @@ export class OrderRepo {
   }
 
   async findOne(id: number) {
-    return await this.OrderRepository.findOne(id);
+    return await this.OrderRepository.findOne(id, { relations: ["user"] });
   }
 
   async update(id: number, updateOrderDto: UpdateOrderDto) {

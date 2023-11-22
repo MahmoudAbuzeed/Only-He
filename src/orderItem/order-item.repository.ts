@@ -35,7 +35,10 @@ export class OrderItemRepo {
   }
 
   async createMany(createOrderItemDto: CreateOrderItemDto[]) {
-    console.log({ createOrderItemDto });
     return await this.OrderItemRepository.save(createOrderItemDto);
+  }
+
+  async findWithOption(options: any) {
+    return await this.OrderItemRepository.find(options);
   }
 }
