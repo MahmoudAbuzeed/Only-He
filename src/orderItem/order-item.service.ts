@@ -1,7 +1,6 @@
 import { Injectable } from "@nestjs/common";
 
 import { DELETED_SUCCESSFULLY, UPDATED_SUCCESSFULLY } from "messages";
-import { ErrorHandler } from "shared/errorHandler.service";
 import { CreateOrderItemDto } from "./dto/create-order-item.dto";
 import { UpdateOrderItemDto } from "./dto/update-order-item.dto";
 import { OrderItemRepo } from "./order-item.repository";
@@ -9,7 +8,7 @@ import { CustomError } from "shared/custom-error/custom-error";
 
 @Injectable()
 export class OrderItemService {
-  constructor(private readonly orderItemRepo: OrderItemRepo, private readonly errorHandler: ErrorHandler) {}
+  constructor(private readonly orderItemRepo: OrderItemRepo) {}
 
   async create(createOrderItemDto: CreateOrderItemDto) {
     try {
@@ -51,5 +50,31 @@ export class OrderItemService {
     const deletedOrderItem = await this.orderItemRepo.remove(+id);
     if (deletedOrderItem.affected == 0) throw new CustomError(401, "Order Items Not Found");
     return { message: DELETED_SUCCESSFULLY };
+  }
+
+  async upsertOrderItemWithOptions(orderId: number, data: any) {
+    const orderItems = await this.orderItemRepo.findManyWithOptions({ where: { orderId } });
+
+    // Update existing items
+    for (const orderItem of orderItems) {
+      const dataToUpdate = data.find((item) => item.productId === orderItem.productId);
+      if (dataToUpdate) {
+        await this.orderItemRepo.updateOneWithOptions(orderItem.id, {
+          quantity: dataToUpdate.quantity,
+        });
+      }
+    }
+
+    // Add new items
+    for (const item of data) {
+      const exists = orderItems.some((orderItem) => orderItem.productId === item.productId);
+      if (!exists) {
+        await this.orderItemRepo.create({
+          orderId,
+          productId: item.productId,
+          quantity: item.quantity,
+        });
+      }
+    }
   }
 }

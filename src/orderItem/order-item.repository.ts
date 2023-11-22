@@ -41,4 +41,12 @@ export class OrderItemRepo {
   async findWithOption(options: any) {
     return await this.OrderItemRepository.find(options);
   }
+
+  async findManyWithOptions(options: any) {
+    return await this.OrderItemRepository.find(options);
+  }
+
+  async updateOneWithOptions(id: number, data: any) {
+    return await this.OrderItemRepository.update(id, data);
+  }
 }

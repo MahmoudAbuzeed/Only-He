@@ -8,6 +8,7 @@ import { OrderRepo } from "./order.repository";
 import { OrderItemService } from "src/orderItem/order-item.service";
 import { CustomError } from "shared/custom-error/custom-error";
 import { ProductService } from "src/product/product.service";
+import { Order } from "./entities/order.entity";
 
 @Injectable()
 export class OrderService {
@@ -51,8 +52,15 @@ export class OrderService {
   }
 
   async update(id: number, updateOrderDto: UpdateOrderDto) {
-    const updatedOrder = await this.orderRepo.update(id, updateOrderDto);
-    if (updatedOrder.affected == 0) throw new CustomError(401, "Order Not Found");
+    const order = new Order();
+    order.id = id;
+    order.status = updateOrderDto.status;
+    order.user = updateOrderDto.userId as any;
+    order.total_price = updateOrderDto.total_price;
+
+    await this.orderRepo.update(id, order);
+    await this.orderItemService.upsertOrderItemWithOptions(id, updateOrderDto.orderItems);
+
     return { message: UPDATED_SUCCESSFULLY };
   }
 
