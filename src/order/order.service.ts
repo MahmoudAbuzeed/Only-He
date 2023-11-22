@@ -1,7 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { In } from "typeorm";
 
-import { DELETED_SUCCESSFULLY, UPDATED_SUCCESSFULLY } from "messages";
+import { DELETED_SUCCESSFULLY } from "messages";
 import { CreateOrderDto } from "./dto/create-order.dto";
 import { UpdateOrderDto } from "./dto/update-order.dto";
 import { OrderRepo } from "./order.repository";
@@ -60,8 +60,7 @@ export class OrderService {
 
     await this.orderRepo.update(id, order);
     await this.orderItemService.upsertOrderItemWithOptions(id, updateOrderDto.orderItems);
-
-    return { message: UPDATED_SUCCESSFULLY };
+    return await this.findOne(id);
   }
 
   async remove(id: number) {
