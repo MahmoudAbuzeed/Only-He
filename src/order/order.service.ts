@@ -39,15 +39,26 @@ export class OrderService {
 
   async findOne(id: number) {
     const order = await this.orderRepo.findOne(id);
-    order.user = order?.user?.user_name as any;
-    const orderItemIds = await this.orderItemService.findWithOption({ where: { orderId: id } });
-    const orderItems = await this.productService.findWithOption({
+
+    if (!order) throw new CustomError(401, "Order Not Found");
+
+    order.user = order?.user?.user_name ?? (null as any);
+
+    // First, get the order item records
+    const orderItemRecords = await this.orderItemService.findWithOption({ where: { orderId: id } });
+
+    // Then, use those records to fetch the product records
+    const productRecords = await this.productService.findWithOption({
       where: {
-        id: In(orderItemIds.map((item) => item.productId)),
+        id: In(orderItemRecords.map((item) => item.productId)),
       },
     });
-    order.orderItems = orderItems;
-    if (!order) throw new CustomError(401, "Order Not Found");
+
+    order.orderItems = productRecords.map((product) => {
+      const orderItem = orderItemRecords.find((item) => item.productId === product.id);
+      return { ...product, quantity: orderItem?.quantity ?? 0 };
+    });
+
     return order;
   }
 

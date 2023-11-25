@@ -54,7 +54,6 @@ export class OrderItemService {
 
   async upsertOrderItemWithOptions(orderId: number, data: any) {
     const orderItems = await this.orderItemRepo.findManyWithOptions({ where: { orderId } });
-
     // Update existing items
     for (const orderItem of orderItems) {
       const dataToUpdate = data.find((item) => item.productId === orderItem.productId);

@@ -47,7 +47,6 @@ export class ProductService {
   }
 
   async findWithOption(options: any) {
-    console.log(options.where);
     return await this.productRepo.findWithOption(options);
   }
 }
