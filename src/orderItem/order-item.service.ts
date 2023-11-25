@@ -54,25 +54,31 @@ export class OrderItemService {
 
   async upsertOrderItemWithOptions(orderId: number, data: any) {
     const orderItems = await this.orderItemRepo.findManyWithOptions({ where: { orderId } });
-    // Update existing items
-    for (const orderItem of orderItems) {
-      const dataToUpdate = data.find((item) => item.productId === orderItem.productId);
-      if (dataToUpdate) {
-        await this.orderItemRepo.updateOneWithOptions(orderItem.id, {
-          quantity: dataToUpdate.quantity,
-        });
-      }
-    }
+    const dataProductIds = new Set(data.map((item: any) => item.productId));
 
-    // Add new items
+    // Update existing items and add new ones
     for (const item of data) {
-      const exists = orderItems.some((orderItem) => orderItem.productId === item.productId);
-      if (!exists) {
+      const orderItem = orderItems.find((oi) => oi.productId === item.productId);
+
+      if (orderItem) {
+        // Update existing item
+        await this.orderItemRepo.updateOneWithOptions(orderItem.id, {
+          quantity: item.quantity,
+        });
+      } else {
+        // Add new item
         await this.orderItemRepo.create({
           orderId,
           productId: item.productId,
           quantity: item.quantity,
         });
+      }
+    }
+
+    // Remove items that are no longer present
+    for (const item of orderItems) {
+      if (!dataProductIds.has(item.productId)) {
+        await this.orderItemRepo.remove(item.id);
       }
     }
   }
