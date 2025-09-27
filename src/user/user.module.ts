@@ -14,5 +14,6 @@ import { Logger } from "shared/logger/logger.service";
   imports: [TypeOrmModule.forFeature([User])],
   controllers: [UserController],
   providers: [UserService, UserRepo, JwtService, ErrorHandler, Logger],
+  exports: [UserRepo, UserService],
 })
 export class UserModule {}

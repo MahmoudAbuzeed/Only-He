@@ -27,19 +27,50 @@ export class UserService {
   }
 
   async create(createUserDto: CreateUserDto) {
+    // Validate that either email or phone is provided
+    if (!createUserDto.email && !createUserDto.phone) {
+      throw this.errorHandler.badRequest({ message: 'Either email or phone number is required' });
+    }
+
     const hashedPassword = await this.hashPassword(createUserDto.password);
     createUserDto.password = hashedPassword;
+    
     try {
-      await this.userRepo.create(createUserDto);
-      return { message: CREATED_SUCCESSFULLY };
+      const user = await this.userRepo.create(createUserDto);
+      return { 
+        message: CREATED_SUCCESSFULLY,
+        data: {
+          id: user.id,
+          first_name: user.first_name,
+          last_name: user.last_name,
+          user_name: user.user_name,
+          email: user.email,
+          phone: user.phone
+        }
+      };
     } catch (error) {
       throw this.errorHandler.duplicateValue(error);
     }
   }
 
-  async findByEmail(signInDto: SignInDto) {
+  async signIn(signInDto: SignInDto) {
     try {
-      const user = await this.userRepo.getByEmail(signInDto.email);
+      // Validate that either email or phone is provided
+      if (!signInDto.email && !signInDto.phone) {
+        throw this.errorHandler.badRequest({ message: 'Either email or phone number is required' });
+      }
+
+      let user;
+      if (signInDto.email) {
+        user = await this.userRepo.getByEmail(signInDto.email);
+      } else if (signInDto.phone) {
+        user = await this.userRepo.getByPhone(signInDto.phone);
+      }
+
+      if (!user) {
+        throw this.errorHandler.invalidCredentials();
+      }
+
       const isPasswordMatching = await bcrypt.compare(signInDto.password, user.password);
       if (!isPasswordMatching) throw this.errorHandler.didNotMatch();
 
@@ -48,11 +79,22 @@ export class UserService {
         last_name: user.last_name,
         user_name: user.user_name,
         email: user.email,
+        phone: user.phone,
         id: user.id,
       };
 
-      return { ...finalReturnedUser, token: this.jwtService.sign({ user }) };
+      return { 
+        ...finalReturnedUser, 
+        token: this.jwtService.sign(
+          { user: finalReturnedUser }, 
+          { 
+            secret: process.env.JWT_SECRET || 'default-secret-key',
+            expiresIn: process.env.JWT_EXPIRES_IN || '24h'
+          }
+        ) 
+      };
     } catch (error) {
+      if (error.status === 400) throw error;
       throw this.errorHandler.invalidCredentials();
     }
   }

@@ -23,7 +23,7 @@ export class RoleRepo {
   }
 
   async findOne(id: number) {
-    return await this.roleRepository.findOne(id);
+    return await this.roleRepository.findOne({ where: { id } });
   }
 
   async update(id: number, updateRoleDto: UpdateRoleDto) {
@@ -32,5 +32,14 @@ export class RoleRepo {
 
   async remove(id: number) {
     return await this.roleRepository.delete({ id });
+  }
+
+  async findAllWithUserCount() {
+    return await this.roleRepository
+      .createQueryBuilder('role')
+      .leftJoinAndSelect('role.users', 'user')
+      .loadRelationCountAndMap('role.users_count', 'role.users')
+      .orderBy('role.created_at', 'DESC')
+      .getMany();
   }
 }

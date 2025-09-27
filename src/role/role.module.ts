@@ -11,5 +11,6 @@ import { ErrorHandler } from "shared/errorHandler.service";
   imports: [TypeOrmModule.forFeature([Role])],
   controllers: [RoleController],
   providers: [RoleService, RoleRepo, ErrorHandler],
+  exports: [RoleRepo, RoleService],
 })
 export class RoleModule {}

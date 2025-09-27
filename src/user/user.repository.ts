@@ -23,15 +23,17 @@ export class UserRepo {
   }
 
   async getByEmail(email: string) {
-    const user = await this.userRepository.findOne({ email });
+    const user = await this.userRepository.findOne({ where: { email } });
+    return user;
+  }
 
-    return {
-      ...user,
-    };
+  async getByPhone(phone: string) {
+    const user = await this.userRepository.findOne({ where: { phone } });
+    return user;
   }
 
   async findOne(id: number) {
-    return await this.userRepository.findOne(id);
+    return await this.userRepository.findOne({ where: { id } });
   }
 
   async update(id: number, updateUserDto: UpdateUserDto) {
@@ -40,5 +42,43 @@ export class UserRepo {
 
   async remove(id: number) {
     return await this.userRepository.delete({ id });
+  }
+
+  async findOneWithRoles(id: number) {
+    return await this.userRepository.findOne({
+      where: { id },
+      relations: ['roles'],
+    });
+  }
+
+  async count(): Promise<number> {
+    return await this.userRepository.count();
+  }
+
+  async findAllWithRoles() {
+    return await this.userRepository.find({
+      relations: ['roles'],
+      order: { created_at: 'DESC' },
+    });
+  }
+
+  async assignRoles(userId: number, roleIds: number[]) {
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+      relations: ['roles'],
+    });
+    
+    if (!user) {
+      return null;
+    }
+
+    // Clear existing roles and assign new ones
+    user.roles = roleIds.map(id => ({ id } as any));
+    return await this.userRepository.save(user);
+  }
+
+  // Additional methods for AdminUserService
+  createQueryBuilder(alias: string) {
+    return this.userRepository.createQueryBuilder(alias);
   }
 }

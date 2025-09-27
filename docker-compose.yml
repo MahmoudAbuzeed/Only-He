@@ -1,32 +1,45 @@
-version: '3'
+version: '3.8'
 services:
-  mysqldb:
-    image: mysql
+  postgres:
+    image: postgres:15-alpine
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: grantsAndLoans
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: only_he_db
+    ports:
+      - "5432:5432"
     volumes: 
-      - db-config:/etc/mysql
-      - db-data:/var/lib/mysql
+      - postgres_data:/var/lib/postgresql/data
       - ./db/backup/files/:/data_backup/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   nest-app:
     build:
       context: .
       dockerfile: ./Dockerfile
-    image: node-mysql-app
+    image: node-postgres-app
     ports:
-      - 3000:3000
+      - "3002:3002"
+    environment:
+      DATABASE_HOST: postgres
+      DATABASE_PORT: 5432
+      DATABASE_USER: postgres
+      DATABASE_PASSWORD: postgres
+      DATABASE_NAME: only_he_db
+      NODE_ENV: development
     volumes:
       - ./:/app
       - /app/node_modules
     depends_on:
-      - mysqldb
+      postgres:
+        condition: service_healthy
     stdin_open: true
     tty: true
 
-
 volumes: 
-  db-config:
-  db-data:
+  postgres_data:
