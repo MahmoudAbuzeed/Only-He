@@ -4,9 +4,9 @@ on:
   push:
     branches: [main, master]
     paths-ignore:
-      - 'README.md'
-      - 'docs/**'
-      - '*.md'
+      - "README.md"
+      - "docs/**"
+      - "*.md"
 
 env:
   AWS_REGION: us-east-1
@@ -76,18 +76,18 @@ jobs:
           echo "🏗️ Building Docker image..."
           docker build -f Dockerfile.prod -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
           docker build -f Dockerfile.prod -t $ECR_REGISTRY/$ECR_REPOSITORY:latest .
-          
+
           echo "📤 Pushing to ECR repository: $ECR_REPOSITORY"
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
-          
+
           echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
           echo "✅ Image pushed successfully"
 
       - name: Create RDS PostgreSQL database if it doesn't exist
         run: |
           echo "🗄️ Checking if RDS database exists..."
-          
+
           if aws rds describe-db-instances --db-instance-identifier $RDS_DB_IDENTIFIER --region $AWS_REGION >/dev/null 2>&1; then
             echo "✅ RDS database already exists"
           else
@@ -164,12 +164,12 @@ jobs:
           RDS_ENDPOINT: ${{ steps.get-rds-endpoint.outputs.rds-endpoint }}
         run: |
           echo "🚀 Deploying to App Runner..."
-          
+
           # Check if service exists
           SERVICE_ARN=$(aws apprunner list-services \
             --query "ServiceSummaryList[?ServiceName=='$APP_RUNNER_SERVICE'].ServiceArn" \
             --output text --region $AWS_REGION)
-          
+
           if [ -z "$SERVICE_ARN" ]; then
             echo "🆕 Creating new App Runner service..."
             
@@ -257,8 +257,25 @@ jobs:
             SERVICE_ARN=$(aws apprunner list-services \
               --query "ServiceSummaryList[?ServiceName=='$APP_RUNNER_SERVICE'].ServiceArn" \
               --output text --region $AWS_REGION)
-            aws apprunner wait service-running --service-arn "$SERVICE_ARN" --region $AWS_REGION
-            echo "✅ Service is now running!"
+            
+            # Poll service status until running
+            for i in {1..30}; do
+              STATUS=$(aws apprunner describe-service \
+                --service-arn "$SERVICE_ARN" \
+                --query 'Service.Status' \
+                --output text --region $AWS_REGION)
+              
+              if [ "$STATUS" = "RUNNING" ]; then
+                echo "✅ Service is now running!"
+                break
+              elif [ "$STATUS" = "CREATE_FAILED" ] || [ "$STATUS" = "UPDATE_FAILED" ]; then
+                echo "❌ Service deployment failed with status: $STATUS"
+                exit 1
+              else
+                echo "⏳ Service status: $STATUS (attempt $i/30)"
+                sleep 30
+              fi
+            done
           else
             echo "✅ Found existing service: $SERVICE_ARN"
             echo "🔄 Updating service with new image..."
@@ -299,12 +316,12 @@ jobs:
           SERVICE_ARN=$(aws apprunner list-services \
             --query "ServiceSummaryList[?ServiceName=='$APP_RUNNER_SERVICE'].ServiceArn" \
             --output text --region $AWS_REGION)
-          
+
           SERVICE_URL=$(aws apprunner describe-service \
             --service-arn "$SERVICE_ARN" \
             --query 'Service.ServiceUrl' \
             --output text --region $AWS_REGION)
-          
+
           echo "🚀 Deployment completed successfully!"
           echo "=================================="
           echo "🔗 API Base URL: https://$SERVICE_URL/api/v1"
