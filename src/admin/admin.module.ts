@@ -6,6 +6,7 @@ import { AdminProductController } from "./controllers/admin-product.controller";
 import { AdminCategoryController } from "./controllers/admin-category.controller";
 import { AdminOrderController } from "./controllers/admin-order.controller";
 import { AdminDashboardController } from "./controllers/admin-dashboard.controller";
+import { AdminPackageController } from "./controllers/admin-package.controller";
 
 import { AdminUserService } from "./services/admin-user.service";
 import { AdminProductService } from "./services/admin-product.service";
@@ -16,6 +17,7 @@ import { AdminDashboardService } from "./services/admin-dashboard.service";
 import { UserModule } from "../user/user.module";
 import { RoleModule } from "../role/role.module";
 import { ProductModule } from "../product/product.module";
+import { PackageModule } from "../package/package.module";
 import { CategoryModule } from "../category/category.module";
 import { OrderModule } from "../order/order.module";
 import { CartModule } from "../cart/cart.module";
@@ -38,6 +40,7 @@ import { Product } from "../product/entities/product.entity";
     UserModule,
     RoleModule,
     ProductModule,
+    PackageModule,
     CategoryModule,
     OrderModule,
     CartModule,
@@ -50,6 +53,7 @@ import { Product } from "../product/entities/product.entity";
     AdminCategoryController,
     AdminOrderController,
     AdminDashboardController,
+    AdminPackageController,
   ],
   providers: [
     AdminService,

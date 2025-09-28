@@ -87,7 +87,7 @@ DATABASE_NAME=only_he_db
 
 # Application Configuration
 NODE_ENV=development
-PORT=3002
+PORT=7002
 
 # JWT Configuration
 JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
@@ -106,6 +106,9 @@ docker-compose up -d postgres
 # Development mode with hot reload
 npm run start:dev
 
+# If you encounter port conflicts (EADDRINUSE error)
+npm run restart:dev
+
 # Production mode
 npm run start:prod
 ```
@@ -114,9 +117,9 @@ npm run start:prod
 
 Once the application is running, you can access:
 
-- **API Base URL**: `http://localhost:3002/api/v1`
-- **Swagger Documentation**: `http://localhost:3002/api/docs`
-- **Health Check**: `http://localhost:3002/api/v1`
+- **API Base URL**: `http://localhost:7002/api/v1`
+- **Swagger Documentation**: `http://localhost:7002/api/docs`
+- **Health Check**: `http://localhost:7002/api/v1`
 
 ## 📚 API Documentation
 
@@ -305,7 +308,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🆘 Support & Documentation
 
-- **Swagger UI**: `http://localhost:3002/api/docs` - Interactive API documentation
+- **Swagger UI**: `http://localhost:7002/api/docs` - Interactive API documentation
 - **Setup Guide**: See [SETUP.md](SETUP.md) for detailed setup instructions
 - **Architecture**: Well-documented codebase with TypeScript interfaces
 
@@ -320,6 +323,61 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - ✅ Implemented real-time analytics and dashboard
 - ✅ Added role-based access control
 - ✅ Comprehensive error handling and validation
+
+## 🔧 Troubleshooting
+
+### Port Already in Use Error (EADDRINUSE)
+
+If you encounter the error `Error: listen EADDRINUSE: address already in use :::7002`, it means there's already a process running on port 7002. This commonly happens during development when the server doesn't shut down properly.
+
+**Quick Fix:**
+
+```bash
+npm run restart:dev
+```
+
+**Manual Fix:**
+
+```bash
+# Kill processes on port 7002
+lsof -ti:7002 | xargs kill -9
+
+# Then restart normally
+npm run start:dev
+```
+
+### Database Connection Issues
+
+If you encounter database connection errors:
+
+1. **Check Docker**: Ensure PostgreSQL container is running
+
+   ```bash
+   docker-compose ps
+   ```
+
+2. **Restart Database**: If container is not healthy
+
+   ```bash
+   docker-compose down
+   docker-compose up -d postgres
+   ```
+
+3. **Check Environment**: Verify `.env` file has correct database credentials
+
+### Authentication Issues
+
+If admin endpoints return 403 Forbidden:
+
+1. **Verify Admin User**: Ensure admin user exists and has proper role
+
+   ```bash
+   npm run create-admin
+   ```
+
+2. **Check JWT Token**: Ensure you're using a valid JWT token from login response
+
+3. **Verify Permissions**: Check that admin role has required permissions in database
 
 ---
 

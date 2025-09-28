@@ -7,8 +7,8 @@ import {
   OneToMany,
   ManyToOne,
   JoinColumn,
-} from 'typeorm';
-import { Product } from 'src/product/entities/product.entity';
+} from "typeorm";
+import { Product } from "src/product/entities/product.entity";
 
 @Entity()
 export class Category {
@@ -18,7 +18,7 @@ export class Category {
   @Column({ length: 100 })
   name: string;
 
-  @Column({ type: 'text', nullable: true })
+  @Column({ type: "text", nullable: true })
   description: string;
 
   @Column({ nullable: true })
@@ -30,12 +30,23 @@ export class Category {
   @Column({ default: 0 })
   sort_order: number;
 
+  @Column({ unique: true, nullable: true })
+  slug: string;
+
+  @Column({ nullable: true })
+  meta_title: string;
+
+  @Column({ type: "text", nullable: true })
+  meta_description: string;
+
   // Self-referencing for parent-child categories
   @Column({ nullable: true })
   parent_id: number;
 
-  @ManyToOne(() => Category, (category) => category.children, { nullable: true })
-  @JoinColumn({ name: 'parent_id' })
+  @ManyToOne(() => Category, (category) => category.children, {
+    nullable: true,
+  })
+  @JoinColumn({ name: "parent_id" })
   parent: Category;
 
   @OneToMany(() => Category, (category) => category.parent)

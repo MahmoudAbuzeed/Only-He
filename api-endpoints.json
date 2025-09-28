@@ -1,0 +1,2497 @@
+{
+  "baseUrl": "http://localhost:7002/api/v1",
+  "authentication": {
+    "type": "Bearer Token",
+    "header": "Authorization: Bearer {token}",
+    "loginEndpoint": "/user/signIn",
+    "tokenExpiry": "24h"
+  },
+  "endpoints": {
+    "authentication": {
+      "register": {
+        "method": "POST",
+        "url": "/user",
+        "description": "Register a new user",
+        "requiresAuth": false,
+        "payload": {
+          "first_name": "string (required, max 40)",
+          "last_name": "string (required, max 40)",
+          "user_name": "string (required, max 40)",
+          "email": "string (required, unique)",
+          "phone": "string (optional, unique)",
+          "password": "string (required, min 6)"
+        },
+        "response": {
+          "success": {
+            "first_name": "John",
+            "last_name": "Doe",
+            "user_name": "johndoe",
+            "email": "john@example.com",
+            "phone": "+1234567890",
+            "id": 1,
+            "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+          },
+          "error": {
+            "statusCode": 400,
+            "message": "Email already exists",
+            "error": "Bad Request"
+          }
+        }
+      },
+      "login": {
+        "method": "POST",
+        "url": "/user/signIn",
+        "description": "User login with email/phone and password",
+        "requiresAuth": false,
+        "payload": {
+          "email": "string (optional if phone provided)",
+          "phone": "string (optional if email provided)",
+          "password": "string (required)"
+        },
+        "response": {
+          "success": {
+            "first_name": "John",
+            "last_name": "Doe",
+            "user_name": "johndoe",
+            "email": "john@example.com",
+            "phone": "+1234567890",
+            "id": 1,
+            "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+          },
+          "error": {
+            "statusCode": 401,
+            "message": "Invalid credentials",
+            "error": "Unauthorized"
+          }
+        }
+      }
+    },
+    "categories": {
+      "getAll": {
+        "method": "GET",
+        "url": "/category",
+        "description": "Get all categories",
+        "requiresAuth": false,
+        "queryParams": {
+          "page": "number (optional, default: 1)",
+          "limit": "number (optional, default: 10)"
+        },
+        "response": {
+          "success": [
+            {
+              "id": 1,
+              "name": "Electronics",
+              "description": "Electronic devices and gadgets",
+              "slug": "electronics",
+              "image_url": "https://example.com/image.jpg",
+              "is_active": true,
+              "parent_id": null,
+              "sort_order": 1,
+              "created_at": "2024-01-15T10:30:00Z",
+              "updated_at": "2024-01-15T10:30:00Z"
+            }
+          ]
+        }
+      },
+      "getRoot": {
+        "method": "GET",
+        "url": "/category/root",
+        "description": "Get root categories (no parent)",
+        "requiresAuth": false,
+        "response": {
+          "success": [
+            {
+              "id": 1,
+              "name": "Electronics",
+              "description": "Electronic devices and gadgets",
+              "slug": "electronics",
+              "image_url": "https://example.com/image.jpg",
+              "is_active": true,
+              "parent_id": null,
+              "sort_order": 1,
+              "created_at": "2024-01-15T10:30:00Z"
+            }
+          ]
+        }
+      },
+      "getByParent": {
+        "method": "GET",
+        "url": "/category/parent/{parentId}",
+        "description": "Get subcategories by parent ID",
+        "requiresAuth": false,
+        "pathParams": {
+          "parentId": "number (required)"
+        },
+        "response": {
+          "success": [
+            {
+              "id": 2,
+              "name": "Smartphones",
+              "description": "Mobile phones and accessories",
+              "slug": "smartphones",
+              "parent_id": 1,
+              "is_active": true
+            }
+          ]
+        }
+      },
+      "getById": {
+        "method": "GET",
+        "url": "/category/{id}",
+        "description": "Get category by ID",
+        "requiresAuth": false,
+        "pathParams": {
+          "id": "number (required)"
+        },
+        "response": {
+          "success": {
+            "id": 1,
+            "name": "Electronics",
+            "description": "Electronic devices and gadgets",
+            "slug": "electronics",
+            "image_url": "https://example.com/image.jpg",
+            "is_active": true,
+            "parent_id": null,
+            "sort_order": 1,
+            "created_at": "2024-01-15T10:30:00Z"
+          }
+        }
+      },
+      "getProducts": {
+        "method": "GET",
+        "url": "/category/{id}/products",
+        "description": "Get products by category ID",
+        "requiresAuth": false,
+        "pathParams": {
+          "id": "number (required)"
+        },
+        "queryParams": {
+          "page": "number (optional, default: 1)",
+          "limit": "number (optional, default: 10)",
+          "sort_by": "string (optional: name, price, created_at)",
+          "sort_order": "string (optional: asc, desc)"
+        },
+        "response": {
+          "success": {
+            "products": [
+              {
+                "id": 1,
+                "name": "iPhone 15",
+                "description": "Latest iPhone model",
+                "price": 999.99,
+                "sale_price": 899.99,
+                "sku": "IPH15-001",
+                "stock_quantity": 50,
+                "images": ["image1.jpg", "image2.jpg"],
+                "status": "active",
+                "category_id": 1
+              }
+            ],
+            "total": 25,
+            "page": 1,
+            "limit": 10,
+            "totalPages": 3
+          }
+        }
+      }
+    },
+    "products": {
+      "getAll": {
+        "method": "GET",
+        "url": "/product",
+        "description": "Get all products with pagination",
+        "requiresAuth": false,
+        "queryParams": {
+          "page": "number (optional, default: 1)",
+          "limit": "number (optional, default: 10)",
+          "sort_by": "string (optional: name, price, created_at)",
+          "sort_order": "string (optional: asc, desc)",
+          "category_id": "number (optional)",
+          "status": "string (optional: active, inactive, draft)"
+        },
+        "response": {
+          "success": {
+            "products": [
+              {
+                "id": 1,
+                "name": "iPhone 15",
+                "description": "Latest iPhone model with advanced features",
+                "short_description": "Latest iPhone model",
+                "price": 999.99,
+                "sale_price": 899.99,
+                "cost_price": 700.00,
+                "sku": "IPH15-001",
+                "barcode": "1234567890123",
+                "stock_quantity": 50,
+                "min_stock_level": 10,
+                "manage_stock": true,
+                "weight": 0.2,
+                "dimensions": {
+                  "length": 15.0,
+                  "width": 7.5,
+                  "height": 0.8
+                },
+                "images": ["image1.jpg", "image2.jpg"],
+                "status": "active",
+                "is_featured": true,
+                "meta_title": "iPhone 15 - Latest Apple Smartphone",
+                "meta_description": "Buy the latest iPhone 15 with advanced features",
+                "category_id": 1,
+                "category": {
+                  "id": 1,
+                  "name": "Smartphones"
+                },
+                "created_at": "2024-01-15T10:30:00Z",
+                "updated_at": "2024-01-15T10:30:00Z"
+              }
+            ],
+            "total": 156,
+            "page": 1,
+            "limit": 10,
+            "totalPages": 16
+          }
+        }
+      },
+      "getActive": {
+        "method": "GET",
+        "url": "/product/active",
+        "description": "Get only active products",
+        "requiresAuth": false,
+        "queryParams": {
+          "page": "number (optional, default: 1)",
+          "limit": "number (optional, default: 10)"
+        },
+        "response": {
+          "success": {
+            "products": [],
+            "total": 0,
+            "page": 1,
+            "limit": 10,
+            "totalPages": 0
+          }
+        }
+      },
+      "getFeatured": {
+        "method": "GET",
+        "url": "/product/featured",
+        "description": "Get featured products",
+        "requiresAuth": false,
+        "queryParams": {
+          "limit": "number (optional, default: 10)"
+        },
+        "response": {
+          "success": [
+            {
+              "id": 1,
+              "name": "iPhone 15",
+              "price": 999.99,
+              "sale_price": 899.99,
+              "images": ["image1.jpg"],
+              "is_featured": true
+            }
+          ]
+        }
+      },
+      "getLowStock": {
+        "method": "GET",
+        "url": "/product/low-stock",
+        "description": "Get products with low stock",
+        "requiresAuth": false,
+        "response": {
+          "success": [
+            {
+              "id": 1,
+              "name": "iPhone 15",
+              "sku": "IPH15-001",
+              "stock_quantity": 5,
+              "min_stock_level": 10
+            }
+          ]
+        }
+      },
+      "search": {
+        "method": "GET",
+        "url": "/product/search",
+        "description": "Search products by name or description",
+        "requiresAuth": false,
+        "queryParams": {
+          "q": "string (required, search term)",
+          "page": "number (optional, default: 1)",
+          "limit": "number (optional, default: 10)"
+        },
+        "response": {
+          "success": {
+            "products": [],
+            "total": 0,
+            "page": 1,
+            "limit": 10,
+            "totalPages": 0
+          }
+        }
+      },
+      "getById": {
+        "method": "GET",
+        "url": "/product/{id}",
+        "description": "Get product by ID",
+        "requiresAuth": false,
+        "pathParams": {
+          "id": "number (required)"
+        },
+        "response": {
+          "success": {
+            "id": 1,
+            "name": "iPhone 15",
+            "description": "Latest iPhone model with advanced features",
+            "price": 999.99,
+            "sale_price": 899.99,
+            "sku": "IPH15-001",
+            "stock_quantity": 50,
+            "images": ["image1.jpg", "image2.jpg"],
+            "status": "active",
+            "category": {
+              "id": 1,
+              "name": "Smartphones"
+            }
+          }
+        }
+      },
+      "getBySku": {
+        "method": "GET",
+        "url": "/product/sku/{sku}",
+        "description": "Get product by SKU",
+        "requiresAuth": false,
+        "pathParams": {
+          "sku": "string (required)"
+        },
+        "response": {
+          "success": {
+            "id": 1,
+            "name": "iPhone 15",
+            "sku": "IPH15-001",
+            "price": 999.99,
+            "stock_quantity": 50
+          }
+        }
+      }
+    },
+    "packages": {
+      "getAll": {
+        "method": "GET",
+        "url": "/package",
+        "description": "Get all packages with pagination and filtering",
+        "requiresAuth": false,
+        "queryParams": {
+          "page": "number (optional, default: 1)",
+          "limit": "number (optional, default: 10)",
+          "status": "string (optional: active, inactive, expired)",
+          "search": "string (optional, search in name, description, or SKU)",
+          "sort_by": "string (optional: name, price, created_at)",
+          "sort_order": "string (optional: asc, desc)"
+        },
+        "response": {
+          "success": {
+            "packages": [
+              {
+                "id": 1,
+                "name": "Electronics Bundle",
+                "description": "Complete electronics package with phone and accessories",
+                "sku": "PKG-ELEC-001",
+                "price": 1299.99,
+                "original_price": 1499.99,
+                "discount_percentage": 13.33,
+                "status": "active",
+                "is_featured": true,
+                "valid_from": "2024-01-01T00:00:00Z",
+                "valid_until": "2024-12-31T23:59:59Z",
+                "package_products": [
+                  {
+                    "id": 1,
+                    "quantity": 1,
+                    "unit_price": 999.99,
+                    "product": {
+                      "id": 1,
+                      "name": "iPhone 15",
+                      "price": 999.99,
+                      "images": ["image1.jpg"]
+                    }
+                  }
+                ],
+                "created_at": "2024-01-15T10:30:00Z"
+              }
+            ],
+            "total": 25,
+            "page": 1,
+            "limit": 10,
+            "totalPages": 3
+          }
+        }
+      },
+      "getActive": {
+        "method": "GET",
+        "url": "/package/active",
+        "description": "Get only active packages",
+        "requiresAuth": false,
+        "response": {
+          "success": [
+            {
+              "id": 1,
+              "name": "Electronics Bundle",
+              "price": 1299.99,
+              "status": "active",
+              "package_products": []
+            }
+          ]
+        }
+      },
+      "getFeatured": {
+        "method": "GET",
+        "url": "/package/featured",
+        "description": "Get featured packages for homepage or promotions",
+        "requiresAuth": false,
+        "response": {
+          "success": [
+            {
+              "id": 1,
+              "name": "Electronics Bundle",
+              "price": 1299.99,
+              "is_featured": true,
+              "package_products": []
+            }
+          ]
+        }
+      },
+      "search": {
+        "method": "GET",
+        "url": "/package/search",
+        "description": "Search packages by name, description, or SKU",
+        "requiresAuth": false,
+        "queryParams": {
+          "q": "string (required, search query)",
+          "limit": "number (optional, default: 10)"
+        },
+        "response": {
+          "success": [
+            {
+              "id": 1,
+              "name": "Electronics Bundle",
+              "description": "Complete electronics package",
+              "price": 1299.99,
+              "package_products": []
+            }
+          ]
+        }
+      },
+      "getById": {
+        "method": "GET",
+        "url": "/package/{id}",
+        "description": "Get package details by ID",
+        "requiresAuth": false,
+        "pathParams": {
+          "id": "number (required)"
+        },
+        "response": {
+          "success": {
+            "id": 1,
+            "name": "Electronics Bundle",
+            "description": "Complete electronics package with phone and accessories",
+            "sku": "PKG-ELEC-001",
+            "price": 1299.99,
+            "original_price": 1499.99,
+            "discount_percentage": 13.33,
+            "status": "active",
+            "is_featured": true,
+            "valid_from": "2024-01-01T00:00:00Z",
+            "valid_until": "2024-12-31T23:59:59Z",
+            "terms_and_conditions": ["Valid for 30 days", "No returns on opened items"],
+            "package_products": [
+              {
+                "id": 1,
+                "quantity": 1,
+                "unit_price": 999.99,
+                "product": {
+                  "id": 1,
+                  "name": "iPhone 15",
+                  "price": 999.99,
+                  "images": ["image1.jpg"],
+                  "category": {
+                    "id": 1,
+                    "name": "Smartphones"
+                  }
+                }
+              }
+            ],
+            "created_at": "2024-01-15T10:30:00Z"
+          }
+        }
+      },
+      "getBySku": {
+        "method": "GET",
+        "url": "/package/sku/{sku}",
+        "description": "Get package by SKU",
+        "requiresAuth": false,
+        "pathParams": {
+          "sku": "string (required)"
+        },
+        "response": {
+          "success": {
+            "id": 1,
+            "name": "Electronics Bundle",
+            "sku": "PKG-ELEC-001",
+            "price": 1299.99,
+            "package_products": []
+          }
+        }
+      }
+    },
+    "cart": {
+      "get": {
+        "method": "GET",
+        "url": "/cart",
+        "description": "Get user's cart",
+        "requiresAuth": true,
+        "response": {
+          "success": {
+            "id": 1,
+            "user_id": 1,
+            "items": [
+              {
+                "id": 1,
+                "product_id": 1,
+                "product": {
+                  "id": 1,
+                  "name": "iPhone 15",
+                  "price": 999.99,
+                  "images": ["image1.jpg"]
+                },
+                "quantity": 2,
+                "unit_price": 999.99,
+                "total_price": 1999.98
+              }
+            ],
+            "subtotal": 1999.98,
+            "tax_amount": 199.99,
+            "shipping_amount": 10.00,
+            "discount_amount": 0.00,
+            "total": 2209.97,
+            "item_count": 2,
+            "created_at": "2024-01-15T10:30:00Z",
+            "updated_at": "2024-01-15T10:30:00Z"
+          }
+        }
+      },
+      "addItem": {
+        "method": "POST",
+        "url": "/cart/add",
+        "description": "Add item to cart",
+        "requiresAuth": true,
+        "payload": {
+          "product_id": "number (required)",
+          "quantity": "number (required, min: 1)"
+        },
+        "response": {
+          "success": {
+            "message": "Item added to cart successfully",
+            "cart": {
+              "id": 1,
+              "item_count": 3,
+              "total": 2209.97
+            }
+          }
+        }
+      },
+      "increaseQuantity": {
+        "method": "PATCH",
+        "url": "/cart/item/{itemId}/increase",
+        "description": "Increase item quantity in cart",
+        "requiresAuth": true,
+        "pathParams": {
+          "itemId": "number (required)"
+        },
+        "response": {
+          "success": {
+            "message": "Item quantity increased successfully",
+            "item": {
+              "id": 1,
+              "quantity": 3,
+              "total_price": 2999.97
+            }
+          }
+        }
+      },
+      "decreaseQuantity": {
+        "method": "PATCH",
+        "url": "/cart/item/{itemId}/decrease",
+        "description": "Decrease item quantity in cart",
+        "requiresAuth": true,
+        "pathParams": {
+          "itemId": "number (required)"
+        },
+        "response": {
+          "success": {
+            "message": "Item quantity decreased successfully",
+            "item": {
+              "id": 1,
+              "quantity": 1,
+              "total_price": 999.99
+            }
+          }
+        }
+      },
+      "removeItem": {
+        "method": "DELETE",
+        "url": "/cart/item/{itemId}",
+        "description": "Remove item from cart",
+        "requiresAuth": true,
+        "pathParams": {
+          "itemId": "number (required)"
+        },
+        "response": {
+          "success": {
+            "message": "Item removed from cart successfully"
+          }
+        }
+      },
+      "clear": {
+        "method": "DELETE",
+        "url": "/cart/clear",
+        "description": "Clear entire cart",
+        "requiresAuth": true,
+        "response": {
+          "success": {
+            "message": "Cart cleared successfully"
+          }
+        }
+      }
+    },
+    "orders": {
+      "create": {
+        "method": "POST",
+        "url": "/order",
+        "description": "Place a new order",
+        "requiresAuth": true,
+        "payload": {
+          "shipping_address": {
+            "first_name": "string (required)",
+            "last_name": "string (required)",
+            "company": "string (optional)",
+            "address_line_1": "string (required)",
+            "address_line_2": "string (optional)",
+            "city": "string (required)",
+            "state": "string (required)",
+            "postal_code": "string (required)",
+            "country": "string (required)",
+            "phone": "string (optional)"
+          },
+          "billing_address": {
+            "first_name": "string (optional, same as shipping if not provided)",
+            "last_name": "string (optional)",
+            "company": "string (optional)",
+            "address_line_1": "string (optional)",
+            "address_line_2": "string (optional)",
+            "city": "string (optional)",
+            "state": "string (optional)",
+            "postal_code": "string (optional)",
+            "country": "string (optional)",
+            "phone": "string (optional)"
+          },
+          "shipping_method": "string (optional, default: standard)",
+          "payment_method": "string (optional, default: cash_on_delivery)",
+          "notes": "string (optional)",
+          "coupon_code": "string (optional)"
+        },
+        "response": {
+          "success": {
+            "id": 1,
+            "order_number": "ORD-2024-001",
+            "status": "pending",
+            "payment_status": "pending",
+            "subtotal": 1999.98,
+            "tax_amount": 199.99,
+            "shipping_amount": 10.00,
+            "total_amount": 2209.97,
+            "items": [
+              {
+                "id": 1,
+                "product_id": 1,
+                "product_name": "iPhone 15",
+                "quantity": 2,
+                "unit_price": 999.99,
+                "total_price": 1999.98
+              }
+            ],
+            "created_at": "2024-01-15T10:30:00Z"
+          }
+        }
+      },
+      "getMyOrders": {
+        "method": "GET",
+        "url": "/order",
+        "description": "Get user's orders",
+        "requiresAuth": true,
+        "queryParams": {
+          "page": "number (optional, default: 1)",
+          "limit": "number (optional, default: 10)",
+          "status": "string (optional: pending, confirmed, processing, shipped, delivered, cancelled)"
+        },
+        "response": {
+          "success": {
+            "orders": [
+              {
+                "id": 1,
+                "order_number": "ORD-2024-001",
+                "status": "pending",
+                "payment_status": "pending",
+                "total_amount": 2209.97,
+                "created_at": "2024-01-15T10:30:00Z",
+                "items_count": 2
+              }
+            ],
+            "total": 5,
+            "page": 1,
+            "limit": 10,
+            "totalPages": 1
+          }
+        }
+      },
+      "getById": {
+        "method": "GET",
+        "url": "/order/{id}",
+        "description": "Get order details by ID",
+        "requiresAuth": true,
+        "pathParams": {
+          "id": "number (required)"
+        },
+        "response": {
+          "success": {
+            "id": 1,
+            "order_number": "ORD-2024-001",
+            "status": "pending",
+            "payment_status": "pending",
+            "subtotal": 1999.98,
+            "tax_amount": 199.99,
+            "shipping_amount": 10.00,
+            "total_amount": 2209.97,
+            "shipping_address": {
+              "first_name": "John",
+              "last_name": "Doe",
+              "address_line_1": "123 Main St",
+              "city": "New York",
+              "state": "NY",
+              "postal_code": "10001",
+              "country": "USA"
+            },
+            "items": [
+              {
+                "id": 1,
+                "product_id": 1,
+                "product_name": "iPhone 15",
+                "quantity": 2,
+                "unit_price": 999.99,
+                "total_price": 1999.98
+              }
+            ],
+            "created_at": "2024-01-15T10:30:00Z"
+          }
+        }
+      }
+    },
+    "favorites": {
+      "get": {
+        "method": "GET",
+        "url": "/favorite",
+        "description": "Get user's favorites",
+        "requiresAuth": true,
+        "queryParams": {
+          "page": "number (optional, default: 1)",
+          "limit": "number (optional, default: 10)"
+        },
+        "response": {
+          "success": {
+            "favorites": [
+              {
+                "id": 1,
+                "product": {
+                  "id": 1,
+                  "name": "iPhone 15",
+                  "price": 999.99,
+                  "sale_price": 899.99,
+                  "images": ["image1.jpg"],
+                  "status": "active"
+                },
+                "created_at": "2024-01-15T10:30:00Z"
+              }
+            ],
+            "total": 5,
+            "page": 1,
+            "limit": 10,
+            "totalPages": 1
+          }
+        }
+      },
+      "toggle": {
+        "method": "POST",
+        "url": "/favorite/toggle/{productId}",
+        "description": "Add or remove product from favorites",
+        "requiresAuth": true,
+        "pathParams": {
+          "productId": "number (required)"
+        },
+        "response": {
+          "success": {
+            "message": "Product added to favorites",
+            "is_favorite": true
+          }
+        }
+      },
+      "remove": {
+        "method": "DELETE",
+        "url": "/favorite/{productId}",
+        "description": "Remove product from favorites",
+        "requiresAuth": true,
+        "pathParams": {
+          "productId": "number (required)"
+        },
+        "response": {
+          "success": {
+            "message": "Product removed from favorites successfully"
+          }
+        }
+      },
+      "clear": {
+        "method": "DELETE",
+        "url": "/favorite/clear",
+        "description": "Clear all favorites",
+        "requiresAuth": true,
+        "response": {
+          "success": {
+            "message": "All favorites cleared successfully"
+          }
+        }
+      }
+    },
+    "admin": {
+      "dashboard": {
+        "overview": {
+          "method": "GET",
+          "url": "/admin/dashboard/overview",
+          "description": "Get dashboard overview with key metrics",
+          "requiresAuth": true,
+          "requiredRole": "admin",
+          "response": {
+            "success": {
+              "summary": {
+                "total_users": 1250,
+                "total_orders": 3420,
+                "total_products": 156,
+                "total_revenue": 125000.50,
+                "new_users_today": 15,
+                "orders_today": 23,
+                "revenue_today": 2500.00
+              },
+              "recent_orders": [
+                {
+                  "id": 1,
+                  "order_number": "ORD-2024-001",
+                  "customer_name": "John Doe",
+                  "total": 999.99,
+                  "status": "pending",
+                  "created_at": "2024-01-15T10:30:00Z"
+                }
+              ],
+              "low_stock_products": [
+                {
+                  "id": 1,
+                  "name": "iPhone 15",
+                  "sku": "IPH15-001",
+                  "stock_quantity": 5,
+                  "min_stock_level": 10
+                }
+              ],
+              "top_selling_products": [
+                {
+                  "product_id": 1,
+                  "name": "iPhone 15",
+                  "quantity_sold": 150,
+                  "revenue": 149999.50
+                }
+              ]
+            }
+          }
+        },
+        "salesAnalytics": {
+          "method": "GET",
+          "url": "/admin/dashboard/sales-analytics",
+          "description": "Get sales analytics data",
+          "requiresAuth": true,
+          "requiredRole": "admin",
+          "queryParams": {
+            "period": "string (optional: 7d, 30d, 90d, 1y, default: 30d)",
+            "group_by": "string (optional: day, week, month, default: day)"
+          },
+          "response": {
+            "success": {
+              "period": "30d",
+              "total_revenue": 125000.50,
+              "total_orders": 3420,
+              "average_order_value": 36.55,
+              "growth_rate": 15.5,
+              "sales_by_period": [
+                {
+                  "period": "2024-01-15",
+                  "revenue": 2500.00,
+                  "orders": 23
+                }
+              ],
+              "top_categories": [
+                {
+                  "category": "Electronics",
+                  "revenue": 75000.00,
+                  "percentage": 60.0
+                }
+              ],
+              "payment_methods": [
+                {
+                  "method": "cash_on_delivery",
+                  "count": 2850,
+                  "percentage": 83.3
+                }
+              ]
+            }
+          }
+        },
+        "userAnalytics": {
+          "method": "GET",
+          "url": "/admin/dashboard/user-analytics",
+          "description": "Get user analytics data",
+          "requiresAuth": true,
+          "requiredRole": "admin",
+          "queryParams": {
+            "period": "string (optional: 7d, 30d, 90d, default: 30d)"
+          },
+          "response": {
+            "success": {
+              "total_users": 1250,
+              "new_users_period": 150,
+              "active_users_period": 850,
+              "user_growth_rate": 12.5,
+              "registrations_by_period": [
+                {
+                  "period": "2024-01-15",
+                  "count": 5
+                }
+              ],
+              "user_activity": {
+                "daily_active_users": 120,
+                "weekly_active_users": 450,
+                "monthly_active_users": 850
+              },
+              "top_customers": [
+                {
+                  "user_id": 1,
+                  "name": "John Doe",
+                  "email": "john@example.com",
+                  "total_orders": 15,
+                  "total_spent": 5999.85
+                }
+              ]
+            }
+          }
+        },
+        "inventoryStatus": {
+          "method": "GET",
+          "url": "/admin/dashboard/inventory-status",
+          "description": "Get inventory status and metrics",
+          "requiresAuth": true,
+          "requiredRole": "admin",
+          "response": {
+            "success": {
+              "total_products": 156,
+              "low_stock_count": 12,
+              "out_of_stock_count": 3,
+              "total_inventory_value": 125000.00,
+              "low_stock_products": [
+                {
+                  "id": 1,
+                  "name": "iPhone 15",
+                  "sku": "IPH15-001",
+                  "stock_quantity": 5,
+                  "min_stock_level": 10,
+                  "category": "Smartphones"
+                }
+              ],
+              "out_of_stock_products": [
+                {
+                  "id": 2,
+                  "name": "Samsung Galaxy S24",
+                  "sku": "SGS24-001",
+                  "stock_quantity": 0,
+                  "category": "Smartphones"
+                }
+              ],
+              "top_selling_products": [
+                {
+                  "id": 1,
+                  "name": "iPhone 15",
+                  "stock_remaining": 45,
+                  "quantity_sold": 150,
+                  "revenue": 149999.50
+                }
+              ]
+            }
+          }
+        },
+        "recentActivities": {
+          "method": "GET",
+          "url": "/admin/dashboard/recent-activities",
+          "description": "Get recent system activities",
+          "requiresAuth": true,
+          "requiredRole": "admin",
+          "queryParams": {
+            "limit": "number (optional, default: 20)"
+          },
+          "response": {
+            "success": [
+              {
+                "id": 1,
+                "type": "order_created",
+                "description": "New order ORD-2024-001 created by John Doe",
+                "user": {
+                  "id": 1,
+                  "name": "John Doe",
+                  "email": "john@example.com"
+                },
+                "timestamp": "2024-01-15T10:30:00Z"
+              }
+            ]
+          }
+        },
+        "systemHealth": {
+          "method": "GET",
+          "url": "/admin/dashboard/system-health",
+          "description": "Get system health and performance metrics",
+          "requiresAuth": true,
+          "requiredRole": "admin",
+          "response": {
+            "success": {
+              "status": "healthy",
+              "uptime": "15 days, 4 hours, 23 minutes",
+              "database": {
+                "status": "connected",
+                "response_time": "2ms",
+                "connections": 15
+              },
+              "api": {
+                "status": "operational",
+                "response_time": "45ms",
+                "requests_per_minute": 120
+              },
+              "storage": {
+                "used": "2.5GB",
+                "available": "47.5GB",
+                "usage_percentage": "5.0"
+              },
+              "recent_errors": [
+                {
+                  "message": "Order processing failed",
+                  "count": 3,
+                  "last_occurrence": "2024-01-15T09:15:00Z"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "users": {
+        "getAll": {
+          "method": "GET",
+          "url": "/admin/users",
+          "description": "Get all users with pagination",
+          "requiresAuth": true,
+          "requiredRole": "admin",
+          "queryParams": {
+            "page": "number (optional, default: 1)",
+            "limit": "number (optional, default: 10)",
+            "search": "string (optional)",
+            "role": "string (optional)",
+            "status": "string (optional: active, inactive)"
+          },
+          "response": {
+            "success": {
+              "users": [
+                {
+                  "id": 1,
+                  "first_name": "John",
+                  "last_name": "Doe",
+                  "user_name": "johndoe",
+                  "email": "john@example.com",
+                  "phone": "+1234567890",
+                  "is_active": true,
+                  "last_login": "2024-01-15T10:30:00Z",
+                  "roles": [
+                    {
+                      "id": 1,
+                      "name": "customer",
+                      "type": "customer"
+                    }
+                  ],
+                  "created_at": "2024-01-10T10:30:00Z"
+                }
+              ],
+              "total": 1250,
+              "page": 1,
+              "limit": 10,
+              "totalPages": 125
+            }
+          }
+        },
+        "create": {
+          "method": "POST",
+          "url": "/admin/users",
+          "description": "Create a new user",
+          "requiresAuth": true,
+          "requiredRole": "admin",
+          "payload": {
+            "first_name": "string (required, max 40)",
+            "last_name": "string (required, max 40)",
+            "user_name": "string (required, max 40)",
+            "email": "string (required, unique)",
+            "phone": "string (optional, unique)",
+            "password": "string (required, min 6)",
+            "is_active": "boolean (optional, default: true)",
+            "role_ids": "number[] (optional)"
+          },
+          "response": {
+            "success": {
+              "id": 1,
+              "first_name": "John",
+              "last_name": "Doe",
+              "user_name": "johndoe",
+              "email": "john@example.com",
+              "phone": "+1234567890",
+              "is_active": true,
+              "created_at": "2024-01-15T10:30:00Z"
+            }
+          }
+        },
+        "getById": {
+          "method": "GET",
+          "url": "/admin/users/{id}",
+          "description": "Get user details by ID",
+          "requiresAuth": true,
+          "requiredRole": "admin",
+          "pathParams": {
+            "id": "number (required)"
+          },
+          "response": {
+            "success": {
+              "id": 1,
+              "first_name": "John",
+              "last_name": "Doe",
+              "user_name": "johndoe",
+              "email": "john@example.com",
+              "phone": "+1234567890",
+              "is_active": true,
+              "last_login": "2024-01-15T10:30:00Z",
+              "roles": [
+                {
+                  "id": 1,
+                  "name": "customer",
+                  "type": "customer"
+                }
+              ],
+              "created_at": "2024-01-10T10:30:00Z",
+              "updated_at": "2024-01-15T10:30:00Z"
+            }
+          }
+        },
+        "update": {
+          "method": "PATCH",
+          "url": "/admin/users/{id}",
+          "description": "Update user information",
+          "requiresAuth": true,
+          "requiredRole": "admin",
+          "pathParams": {
+            "id": "number (required)"
+          },
+          "payload": {
+            "first_name": "string (optional, max 40)",
+            "last_name": "string (optional, max 40)",
+            "user_name": "string (optional, max 40)",
+            "email": "string (optional, unique)",
+            "phone": "string (optional, unique)",
+            "password": "string (optional, min 6)",
+            "is_active": "boolean (optional)"
+          },
+          "response": {
+            "success": {
+              "message": "User updated successfully",
+              "user": {
+                "id": 1,
+                "first_name": "John",
+                "last_name": "Doe",
+                "email": "john@example.com",
+                "is_active": true
+              }
+            }
+          }
+        },
+        "delete": {
+          "method": "DELETE",
+          "url": "/admin/users/{id}",
+          "description": "Delete user",
+          "requiresAuth": true,
+          "requiredRole": "admin",
+          "pathParams": {
+            "id": "number (required)"
+          },
+          "response": {
+            "success": {
+              "message": "User deleted successfully"
+            }
+          }
+        },
+        "assignRole": {
+          "method": "POST",
+          "url": "/admin/users/{id}/assign-role",
+          "description": "Assign roles to user",
+          "requiresAuth": true,
+          "requiredRole": "admin",
+          "pathParams": {
+            "id": "number (required)"
+          },
+          "payload": {
+            "role_ids": "number[] (required)"
+          },
+          "response": {
+            "success": {
+              "message": "Roles assigned successfully",
+              "user": {
+                "id": 1,
+                "roles": [
+                  {
+                    "id": 1,
+                    "name": "customer"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "toggleStatus": {
+          "method": "PATCH",
+          "url": "/admin/users/{id}/toggle-status",
+          "description": "Toggle user active status",
+          "requiresAuth": true,
+          "requiredRole": "admin",
+          "pathParams": {
+            "id": "number (required)"
+          },
+          "response": {
+            "success": {
+              "message": "User status updated successfully",
+              "is_active": true
+            }
+          }
+        },
+        "getActivity": {
+          "method": "GET",
+          "url": "/admin/users/{id}/activity",
+          "description": "Get user activity history",
+          "requiresAuth": true,
+          "requiredRole": "admin",
+          "pathParams": {
+            "id": "number (required)"
+          },
+          "response": {
+            "success": {
+              "user_id": 1,
+              "activities": [
+                {
+                  "type": "login",
+                  "description": "User logged in",
+                  "timestamp": "2024-01-15T10:30:00Z",
+                  "ip_address": "192.168.1.1"
+                }
+              ],
+              "summary": {
+                "total_orders": 15,
+                "total_spent": 5999.85,
+                "last_login": "2024-01-15T10:30:00Z",
+                "registration_date": "2024-01-10T10:30:00Z"
+              }
+            }
+          }
+        }
+      },
+      "products": {
+        "getAll": {
+          "method": "GET",
+          "url": "/admin/products",
+          "description": "Get all products for admin management",
+          "requiresAuth": true,
+          "requiredRole": "admin",
+          "queryParams": {
+            "page": "number (optional, default: 1)",
+            "limit": "number (optional, default: 10)",
+            "search": "string (optional)",
+            "category_id": "number (optional)",
+            "status": "string (optional: active, inactive, draft)",
+            "sort_by": "string (optional: name, price, stock, created_at)",
+            "sort_order": "string (optional: asc, desc)"
+          },
+          "response": {
+            "success": {
+              "products": [
+                {
+                  "id": 1,
+                  "name": "iPhone 15",
+                  "sku": "IPH15-001",
+                  "price": 999.99,
+                  "sale_price": 899.99,
+                  "stock_quantity": 50,
+                  "status": "active",
+                  "is_featured": true,
+                  "category": {
+                    "id": 1,
+                    "name": "Smartphones"
+                  },
+                  "created_at": "2024-01-15T10:30:00Z"
+                }
+              ],
+              "total": 156,
+              "page": 1,
+              "limit": 10,
+              "totalPages": 16
+            }
+          }
+        },
+        "create": {
+          "method": "POST",
+          "url": "/admin/products",
+          "description": "Create a new product",
+          "requiresAuth": true,
+          "requiredRole": "admin",
+          "payload": {
+            "name": "string (required, max 255)",
+            "description": "string (optional)",
+            "short_description": "string (optional, max 500)",
+            "price": "number (required, min 0)",
+            "sale_price": "number (optional, min 0)",
+            "cost_price": "number (optional, min 0)",
+            "sku": "string (required, unique, max 100)",
+            "barcode": "string (optional, max 100)",
+            "stock_quantity": "number (optional, default: 0)",
+            "min_stock_level": "number (optional, default: 0)",
+            "manage_stock": "boolean (optional, default: true)",
+            "weight": "number (optional)",
+            "dimensions": {
+              "length": "number (optional)",
+              "width": "number (optional)",
+              "height": "number (optional)"
+            },
+            "images": "string[] (optional)",
+            "status": "string (optional: active, inactive, draft, default: active)",
+            "is_featured": "boolean (optional, default: false)",
+            "meta_title": "string (optional, max 255)",
+            "meta_description": "string (optional, max 500)",
+            "category_id": "number (required)"
+          },
+          "response": {
+            "success": {
+              "id": 1,
+              "name": "iPhone 15",
+              "sku": "IPH15-001",
+              "price": 999.99,
+              "status": "active",
+              "created_at": "2024-01-15T10:30:00Z"
+            }
+          }
+        },
+        "getById": {
+          "method": "GET",
+          "url": "/admin/products/{id}",
+          "description": "Get product details for admin",
+          "requiresAuth": true,
+          "requiredRole": "admin",
+          "pathParams": {
+            "id": "number (required)"
+          },
+          "response": {
+            "success": {
+              "id": 1,
+              "name": "iPhone 15",
+              "description": "Latest iPhone model with advanced features",
+              "price": 999.99,
+              "sale_price": 899.99,
+              "sku": "IPH15-001",
+              "stock_quantity": 50,
+              "min_stock_level": 10,
+              "status": "active",
+              "category": {
+                "id": 1,
+                "name": "Smartphones"
+              },
+              "created_at": "2024-01-15T10:30:00Z",
+              "updated_at": "2024-01-15T10:30:00Z"
+            }
+          }
+        },
+        "update": {
+          "method": "PATCH",
+          "url": "/admin/products/{id}",
+          "description": "Update product information",
+          "requiresAuth": true,
+          "requiredRole": "admin",
+          "pathParams": {
+            "id": "number (required)"
+          },
+          "payload": {
+            "name": "string (optional, max 255)",
+            "description": "string (optional)",
+            "price": "number (optional, min 0)",
+            "sale_price": "number (optional, min 0)",
+            "stock_quantity": "number (optional)",
+            "status": "string (optional: active, inactive, draft)",
+            "is_featured": "boolean (optional)",
+            "category_id": "number (optional)"
+          },
+          "response": {
+            "success": {
+              "message": "Product updated successfully",
+              "product": {
+                "id": 1,
+                "name": "iPhone 15",
+                "price": 999.99,
+                "status": "active"
+              }
+            }
+          }
+        },
+        "delete": {
+          "method": "DELETE",
+          "url": "/admin/products/{id}",
+          "description": "Delete product",
+          "requiresAuth": true,
+          "requiredRole": "admin",
+          "pathParams": {
+            "id": "number (required)"
+          },
+          "response": {
+            "success": {
+              "message": "Product deleted successfully"
+            }
+          }
+        },
+        "updateStock": {
+          "method": "PATCH",
+          "url": "/admin/products/{id}/stock",
+          "description": "Update product stock quantity",
+          "requiresAuth": true,
+          "requiredRole": "admin",
+          "pathParams": {
+            "id": "number (required)"
+          },
+          "payload": {
+            "stock_quantity": "number (required, min 0)",
+            "min_stock_level": "number (optional, min 0)"
+          },
+          "response": {
+            "success": {
+              "message": "Stock updated successfully",
+              "product": {
+                "id": 1,
+                "stock_quantity": 100,
+                "min_stock_level": 10
+              }
+            }
+          }
+        },
+        "getAnalytics": {
+          "method": "GET",
+          "url": "/admin/products/{id}/analytics",
+          "description": "Get product analytics and performance data",
+          "requiresAuth": true,
+          "requiredRole": "admin",
+          "pathParams": {
+            "id": "number (required)"
+          },
+          "response": {
+            "success": {
+              "product_id": 1,
+              "total_sold": 150,
+              "total_revenue": 149999.50,
+              "average_rating": 4.5,
+              "views_count": 2500,
+              "conversion_rate": 6.0,
+              "sales_by_period": [
+                {
+                  "period": "2024-01-15",
+                  "quantity": 5,
+                  "revenue": 4999.95
+                }
+              ]
+            }
+          }
+        },
+        "getLowStock": {
+          "method": "GET",
+          "url": "/admin/products/low-stock/list",
+          "description": "Get products with low stock levels",
+          "requiresAuth": true,
+          "requiredRole": "admin",
+          "queryParams": {
+            "limit": "number (optional, default: 50)"
+          },
+          "response": {
+            "success": [
+              {
+                "id": 1,
+                "name": "iPhone 15",
+                "sku": "IPH15-001",
+                "stock_quantity": 5,
+                "min_stock_level": 10,
+                "category": "Smartphones"
+              }
+            ]
+          }
+        }
+      },
+      "categories": {
+        "getAll": {
+          "method": "GET",
+          "url": "/admin/categories",
+          "description": "Get all categories for admin management",
+          "requiresAuth": true,
+          "requiredRole": "admin",
+          "queryParams": {
+            "page": "number (optional, default: 1)",
+            "limit": "number (optional, default: 10)",
+            "search": "string (optional)",
+            "parent_id": "number (optional)",
+            "status": "string (optional: active, inactive)"
+          },
+          "response": {
+            "success": {
+              "categories": [
+                {
+                  "id": 1,
+                  "name": "Electronics",
+                  "description": "Electronic devices and gadgets",
+                  "slug": "electronics",
+                  "is_active": true,
+                  "parent_id": null,
+                  "sort_order": 1,
+                  "products_count": 25,
+                  "created_at": "2024-01-15T10:30:00Z"
+                }
+              ],
+              "total": 15,
+              "page": 1,
+              "limit": 10,
+              "totalPages": 2
+            }
+          }
+        },
+        "create": {
+          "method": "POST",
+          "url": "/admin/categories",
+          "description": "Create a new category",
+          "requiresAuth": true,
+          "requiredRole": "admin",
+          "payload": {
+            "name": "string (required, max 255)",
+            "description": "string (optional)",
+            "slug": "string (optional, auto-generated if not provided)",
+            "image_url": "string (optional)",
+            "is_active": "boolean (optional, default: true)",
+            "parent_id": "number (optional)",
+            "sort_order": "number (optional, default: 0)",
+            "meta_title": "string (optional, max 255)",
+            "meta_description": "string (optional, max 500)"
+          },
+          "response": {
+            "success": {
+              "id": 1,
+              "name": "Electronics",
+              "slug": "electronics",
+              "is_active": true,
+              "created_at": "2024-01-15T10:30:00Z"
+            }
+          }
+        },
+        "getTree": {
+          "method": "GET",
+          "url": "/admin/categories/tree",
+          "description": "Get categories in hierarchical tree structure",
+          "requiresAuth": true,
+          "requiredRole": "admin",
+          "response": {
+            "success": [
+              {
+                "id": 1,
+                "name": "Electronics",
+                "slug": "electronics",
+                "is_active": true,
+                "children": [
+                  {
+                    "id": 2,
+                    "name": "Smartphones",
+                    "slug": "smartphones",
+                    "parent_id": 1,
+                    "is_active": true,
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "getById": {
+          "method": "GET",
+          "url": "/admin/categories/{id}",
+          "description": "Get category details for admin",
+          "requiresAuth": true,
+          "requiredRole": "admin",
+          "pathParams": {
+            "id": "number (required)"
+          },
+          "response": {
+            "success": {
+              "id": 1,
+              "name": "Electronics",
+              "description": "Electronic devices and gadgets",
+              "slug": "electronics",
+              "is_active": true,
+              "parent_id": null,
+              "sort_order": 1,
+              "products_count": 25,
+              "created_at": "2024-01-15T10:30:00Z",
+              "updated_at": "2024-01-15T10:30:00Z"
+            }
+          }
+        },
+        "update": {
+          "method": "PATCH",
+          "url": "/admin/categories/{id}",
+          "description": "Update category information",
+          "requiresAuth": true,
+          "requiredRole": "admin",
+          "pathParams": {
+            "id": "number (required)"
+          },
+          "payload": {
+            "name": "string (optional, max 255)",
+            "description": "string (optional)",
+            "slug": "string (optional)",
+            "image_url": "string (optional)",
+            "is_active": "boolean (optional)",
+            "parent_id": "number (optional)",
+            "sort_order": "number (optional)"
+          },
+          "response": {
+            "success": {
+              "message": "Category updated successfully",
+              "category": {
+                "id": 1,
+                "name": "Electronics",
+                "slug": "electronics",
+                "is_active": true
+              }
+            }
+          }
+        },
+        "delete": {
+          "method": "DELETE",
+          "url": "/admin/categories/{id}",
+          "description": "Delete category",
+          "requiresAuth": true,
+          "requiredRole": "admin",
+          "pathParams": {
+            "id": "number (required)"
+          },
+          "response": {
+            "success": {
+              "message": "Category deleted successfully"
+            }
+          }
+        },
+        "toggleStatus": {
+          "method": "PATCH",
+          "url": "/admin/categories/{id}/toggle-status",
+          "description": "Toggle category active status",
+          "requiresAuth": true,
+          "requiredRole": "admin",
+          "pathParams": {
+            "id": "number (required)"
+          },
+          "response": {
+            "success": {
+              "message": "Category status updated successfully",
+              "is_active": true
+            }
+          }
+        },
+        "move": {
+          "method": "PATCH",
+          "url": "/admin/categories/{id}/move",
+          "description": "Move category to different parent or position",
+          "requiresAuth": true,
+          "requiredRole": "admin",
+          "pathParams": {
+            "id": "number (required)"
+          },
+          "payload": {
+            "parent_id": "number (optional, null for root level)",
+            "sort_order": "number (optional)"
+          },
+          "response": {
+            "success": {
+              "message": "Category moved successfully",
+              "category": {
+                "id": 1,
+                "parent_id": 2,
+                "sort_order": 5
+              }
+            }
+          }
+        },
+        "getAnalytics": {
+          "method": "GET",
+          "url": "/admin/categories/{id}/analytics",
+          "description": "Get category analytics and performance data",
+          "requiresAuth": true,
+          "requiredRole": "admin",
+          "pathParams": {
+            "id": "number (required)"
+          },
+          "response": {
+            "success": {
+              "category_id": 1,
+              "products_count": 25,
+              "total_revenue": 75000.00,
+              "total_orders": 450,
+              "average_order_value": 166.67,
+              "top_products": [
+                {
+                  "id": 1,
+                  "name": "iPhone 15",
+                  "quantity_sold": 150,
+                  "revenue": 149999.50
+                }
+              ]
+            }
+          }
+        }
+      },
+      "orders": {
+        "getAll": {
+          "method": "GET",
+          "url": "/admin/orders",
+          "description": "Get all orders for admin management",
+          "requiresAuth": true,
+          "requiredRole": "admin",
+          "queryParams": {
+            "page": "number (optional, default: 1)",
+            "limit": "number (optional, default: 10)",
+            "search": "string (optional, search by order number or customer)",
+            "status": "string (optional: pending, confirmed, processing, shipped, delivered, cancelled)",
+            "payment_status": "string (optional: pending, paid, failed, refunded)",
+            "date_from": "string (optional, ISO date)",
+            "date_to": "string (optional, ISO date)",
+            "sort_by": "string (optional: created_at, total_amount, status)",
+            "sort_order": "string (optional: asc, desc)"
+          },
+          "response": {
+            "success": {
+              "orders": [
+                {
+                  "id": 1,
+                  "order_number": "ORD-2024-001",
+                  "customer": {
+                    "id": 1,
+                    "name": "John Doe",
+                    "email": "john@example.com"
+                  },
+                  "status": "pending",
+                  "payment_status": "pending",
+                  "total_amount": 2209.97,
+                  "items_count": 2,
+                  "created_at": "2024-01-15T10:30:00Z"
+                }
+              ],
+              "total": 3420,
+              "page": 1,
+              "limit": 10,
+              "totalPages": 342
+            }
+          }
+        },
+        "getAnalytics": {
+          "method": "GET",
+          "url": "/admin/orders/analytics",
+          "description": "Get order analytics and statistics",
+          "requiresAuth": true,
+          "requiredRole": "admin",
+          "queryParams": {
+            "period": "string (optional: 7d, 30d, 90d, 1y, default: 30d)"
+          },
+          "response": {
+            "success": {
+              "total_orders": 3420,
+              "total_revenue": 125000.50,
+              "average_order_value": 36.55,
+              "orders_by_status": {
+                "pending": 150,
+                "confirmed": 200,
+                "processing": 100,
+                "shipped": 80,
+                "delivered": 2800,
+                "cancelled": 90
+              },
+              "revenue_by_period": [
+                {
+                  "period": "2024-01-15",
+                  "revenue": 2500.00,
+                  "orders": 23
+                }
+              ]
+            }
+          }
+        },
+        "getById": {
+          "method": "GET",
+          "url": "/admin/orders/{id}",
+          "description": "Get order details for admin",
+          "requiresAuth": true,
+          "requiredRole": "admin",
+          "pathParams": {
+            "id": "number (required)"
+          },
+          "response": {
+            "success": {
+              "id": 1,
+              "order_number": "ORD-2024-001",
+              "customer": {
+                "id": 1,
+                "name": "John Doe",
+                "email": "john@example.com",
+                "phone": "+1234567890"
+              },
+              "status": "pending",
+              "payment_status": "pending",
+              "subtotal": 1999.98,
+              "tax_amount": 199.99,
+              "shipping_amount": 10.00,
+              "total_amount": 2209.97,
+              "shipping_address": {
+                "first_name": "John",
+                "last_name": "Doe",
+                "address_line_1": "123 Main St",
+                "city": "New York",
+                "state": "NY",
+                "postal_code": "10001",
+                "country": "USA"
+              },
+              "items": [
+                {
+                  "id": 1,
+                  "product_id": 1,
+                  "product_name": "iPhone 15",
+                  "quantity": 2,
+                  "unit_price": 999.99,
+                  "total_price": 1999.98
+                }
+              ],
+              "created_at": "2024-01-15T10:30:00Z",
+              "updated_at": "2024-01-15T10:30:00Z"
+            }
+          }
+        },
+        "updateStatus": {
+          "method": "PATCH",
+          "url": "/admin/orders/{id}/status",
+          "description": "Update order status",
+          "requiresAuth": true,
+          "requiredRole": "admin",
+          "pathParams": {
+            "id": "number (required)"
+          },
+          "payload": {
+            "status": "string (required: pending, confirmed, processing, shipped, delivered, cancelled)",
+            "admin_notes": "string (optional)",
+            "tracking_number": "string (optional, required for shipped status)"
+          },
+          "response": {
+            "success": {
+              "message": "Order status updated successfully",
+              "order": {
+                "id": 1,
+                "status": "confirmed",
+                "updated_at": "2024-01-15T10:30:00Z"
+              }
+            }
+          }
+        },
+        "cancel": {
+          "method": "PATCH",
+          "url": "/admin/orders/{id}/cancel",
+          "description": "Cancel an order",
+          "requiresAuth": true,
+          "requiredRole": "admin",
+          "pathParams": {
+            "id": "number (required)"
+          },
+          "payload": {
+            "reason": "string (optional)",
+            "admin_notes": "string (optional)"
+          },
+          "response": {
+            "success": {
+              "message": "Order cancelled successfully",
+              "order": {
+                "id": 1,
+                "status": "cancelled",
+                "cancelled_at": "2024-01-15T10:30:00Z"
+              }
+            }
+          }
+        },
+        "getUserOrders": {
+          "method": "GET",
+          "url": "/admin/orders/user/{userId}",
+          "description": "Get orders for a specific user",
+          "requiresAuth": true,
+          "requiredRole": "admin",
+          "pathParams": {
+            "userId": "number (required)"
+          },
+          "queryParams": {
+            "page": "number (optional, default: 1)",
+            "limit": "number (optional, default: 10)"
+          },
+          "response": {
+            "success": {
+              "user": {
+                "id": 1,
+                "name": "John Doe",
+                "email": "john@example.com"
+              },
+              "orders": [
+                {
+                  "id": 1,
+                  "order_number": "ORD-2024-001",
+                  "status": "pending",
+                  "total_amount": 2209.97,
+                  "created_at": "2024-01-15T10:30:00Z"
+                }
+              ],
+              "total": 15,
+              "page": 1,
+              "limit": 10,
+              "totalPages": 2
+            }
+          }
+        },
+        "exportCSV": {
+          "method": "GET",
+          "url": "/admin/orders/export/csv",
+          "description": "Export orders to CSV format",
+          "requiresAuth": true,
+          "requiredRole": "admin",
+          "queryParams": {
+            "date_from": "string (optional, ISO date)",
+            "date_to": "string (optional, ISO date)",
+            "status": "string (optional)"
+          },
+          "response": {
+            "success": "CSV file download",
+            "headers": {
+              "Content-Type": "text/csv",
+              "Content-Disposition": "attachment; filename=orders-export.csv"
+            }
+          }
+        }
+      },
+      "roles": {
+        "getAll": {
+          "method": "GET",
+          "url": "/admin/roles",
+          "description": "Get all roles",
+          "requiresAuth": true,
+          "requiredRole": "admin",
+          "response": {
+            "success": [
+              {
+                "id": 1,
+                "name": "admin",
+                "details": "System Administrator with full access",
+                "type": "admin",
+                "permissions": {
+                  "users": {
+                    "create": true,
+                    "read": true,
+                    "update": true,
+                    "delete": true,
+                    "assign_roles": true
+                  },
+                  "products": {
+                    "create": true,
+                    "read": true,
+                    "update": true,
+                    "delete": true,
+                    "manage_stock": true
+                  }
+                },
+                "is_active": true,
+                "users_count": 1,
+                "created_at": "2024-01-15T10:30:00Z"
+              }
+            ]
+          }
+        },
+        "create": {
+          "method": "POST",
+          "url": "/admin/roles",
+          "description": "Create a new role",
+          "requiresAuth": true,
+          "requiredRole": "admin",
+          "payload": {
+            "name": "string (required, max 40, unique)",
+            "details": "string (required)",
+            "type": "string (optional: admin, customer, manager, staff, default: customer)",
+            "permissions": {
+              "users": {
+                "create": "boolean (optional)",
+                "read": "boolean (optional)",
+                "update": "boolean (optional)",
+                "delete": "boolean (optional)",
+                "assign_roles": "boolean (optional)"
+              },
+              "products": {
+                "create": "boolean (optional)",
+                "read": "boolean (optional)",
+                "update": "boolean (optional)",
+                "delete": "boolean (optional)",
+                "manage_stock": "boolean (optional)"
+              }
+            },
+            "is_active": "boolean (optional, default: true)"
+          },
+          "response": {
+            "success": {
+              "id": 1,
+              "name": "manager",
+              "details": "Store Manager",
+              "type": "manager",
+              "is_active": true,
+              "created_at": "2024-01-15T10:30:00Z"
+            }
+          }
+        }
+      },
+      "profile": {
+        "get": {
+          "method": "GET",
+          "url": "/admin/profile",
+          "description": "Get admin profile information",
+          "requiresAuth": true,
+          "requiredRole": "admin",
+          "response": {
+            "success": {
+              "id": 1,
+              "first_name": "System",
+              "last_name": "Administrator",
+              "user_name": "admin",
+              "email": "admin@only-he.com",
+              "phone": "+1234567890",
+              "roles": [
+                {
+                  "id": 1,
+                  "name": "admin",
+                  "type": "admin"
+                }
+              ],
+              "last_login": "2024-01-15T10:30:00Z",
+              "created_at": "2024-01-10T10:30:00Z"
+            }
+          }
+        },
+        "getPermissions": {
+          "method": "GET",
+          "url": "/admin/permissions",
+          "description": "Get admin permissions",
+          "requiresAuth": true,
+          "requiredRole": "admin",
+          "response": {
+            "success": {
+              "user_id": 1,
+              "permissions": {
+                "users": {
+                  "create": true,
+                  "read": true,
+                  "update": true,
+                  "delete": true,
+                  "assign_roles": true
+                },
+                "products": {
+                  "create": true,
+                  "read": true,
+                  "update": true,
+                  "delete": true,
+                  "manage_stock": true
+                },
+                "categories": {
+                  "create": true,
+                  "read": true,
+                  "update": true,
+                  "delete": true
+                },
+                "orders": {
+                  "read": true,
+                  "update": true,
+                  "cancel": true,
+                  "refund": true,
+                  "track": true
+                },
+                "analytics": {
+                  "view_dashboard": true,
+                  "view_reports": true,
+                  "export_data": true
+                }
+              }
+            }
+          }
+        },
+        "getSystemInfo": {
+          "method": "GET",
+          "url": "/admin/system-info",
+          "description": "Get system information",
+          "requiresAuth": true,
+          "requiredRole": "admin",
+          "response": {
+            "success": {
+              "version": "1.0.0",
+              "environment": "development",
+              "database": {
+                "type": "postgresql",
+                "version": "15.0",
+                "status": "connected"
+              },
+              "features": {
+                "swagger_docs": true,
+                "jwt_auth": true,
+                "role_based_access": true,
+                "file_upload": false
+              },
+              "statistics": {
+                "total_users": 1250,
+                "total_products": 156,
+                "total_orders": 3420,
+                "uptime": "15 days"
+              }
+            }
+          }
+        }
+      },
+      "packages": {
+        "getAll": {
+          "method": "GET",
+          "url": "/admin/packages",
+          "description": "Get all packages for admin management",
+          "requiresAuth": true,
+          "requiredRole": "admin",
+          "queryParams": {
+            "page": "number (optional, default: 1)",
+            "limit": "number (optional, default: 10)",
+            "search": "string (optional)",
+            "status": "string (optional: active, inactive, expired)",
+            "sort_by": "string (optional: name, price, created_at)",
+            "sort_order": "string (optional: asc, desc)"
+          },
+          "response": {
+            "success": {
+              "packages": [
+                {
+                  "id": 1,
+                  "name": "Electronics Bundle",
+                  "sku": "PKG-ELEC-001",
+                  "price": 1299.99,
+                  "status": "active",
+                  "is_featured": true,
+                  "package_products": [
+                    {
+                      "id": 1,
+                      "quantity": 1,
+                      "unit_price": 999.99,
+                      "product": {
+                        "id": 1,
+                        "name": "iPhone 15"
+                      }
+                    }
+                  ],
+                  "created_at": "2024-01-15T10:30:00Z"
+                }
+              ],
+              "total": 25,
+              "page": 1,
+              "limit": 10,
+              "totalPages": 3
+            }
+          }
+        },
+        "create": {
+          "method": "POST",
+          "url": "/admin/packages",
+          "description": "Create a new package",
+          "requiresAuth": true,
+          "requiredRole": "admin",
+          "payload": {
+            "name": "string (required, max 200)",
+            "description": "string (required)",
+            "sku": "string (required, unique, max 100)",
+            "price": "number (required, min 0)",
+            "original_price": "number (optional, min 0)",
+            "discount_percentage": "number (optional, 0-100)",
+            "image_url": "string (optional)",
+            "status": "string (optional: active, inactive, expired, default: active)",
+            "valid_from": "string (optional, ISO date)",
+            "valid_until": "string (optional, ISO date)",
+            "max_quantity_per_order": "number (optional, default: 0)",
+            "is_featured": "boolean (optional, default: false)",
+            "terms_and_conditions": "string[] (optional)",
+            "products": [
+              {
+                "product_id": "number (required)",
+                "quantity": "number (required, min 1)",
+                "unit_price": "number (optional)",
+                "sort_order": "number (optional, default: 0)"
+              }
+            ]
+          },
+          "response": {
+            "success": {
+              "id": 1,
+              "name": "Electronics Bundle",
+              "sku": "PKG-ELEC-001",
+              "price": 1299.99,
+              "status": "active",
+              "created_at": "2024-01-15T10:30:00Z"
+            }
+          }
+        },
+        "getById": {
+          "method": "GET",
+          "url": "/admin/packages/{id}",
+          "description": "Get package details for admin",
+          "requiresAuth": true,
+          "requiredRole": "admin",
+          "pathParams": {
+            "id": "number (required)"
+          },
+          "response": {
+            "success": {
+              "id": 1,
+              "name": "Electronics Bundle",
+              "description": "Complete electronics package",
+              "sku": "PKG-ELEC-001",
+              "price": 1299.99,
+              "original_price": 1499.99,
+              "status": "active",
+              "package_products": [
+                {
+                  "id": 1,
+                  "quantity": 1,
+                  "unit_price": 999.99,
+                  "product": {
+                    "id": 1,
+                    "name": "iPhone 15",
+                    "price": 999.99
+                  }
+                }
+              ],
+              "created_at": "2024-01-15T10:30:00Z"
+            }
+          }
+        },
+        "update": {
+          "method": "PATCH",
+          "url": "/admin/packages/{id}",
+          "description": "Update package information",
+          "requiresAuth": true,
+          "requiredRole": "admin",
+          "pathParams": {
+            "id": "number (required)"
+          },
+          "payload": {
+            "name": "string (optional)",
+            "description": "string (optional)",
+            "price": "number (optional)",
+            "status": "string (optional: active, inactive, expired)",
+            "is_featured": "boolean (optional)",
+            "products": "array (optional, replaces all products)"
+          },
+          "response": {
+            "success": {
+              "id": 1,
+              "name": "Electronics Bundle",
+              "price": 1199.99,
+              "status": "active",
+              "updated_at": "2024-01-15T10:30:00Z"
+            }
+          }
+        },
+        "delete": {
+          "method": "DELETE",
+          "url": "/admin/packages/{id}",
+          "description": "Delete package",
+          "requiresAuth": true,
+          "requiredRole": "admin",
+          "pathParams": {
+            "id": "number (required)"
+          },
+          "response": {
+            "success": {
+              "message": "Package deleted successfully"
+            }
+          }
+        },
+        "updateStatus": {
+          "method": "PATCH",
+          "url": "/admin/packages/{id}/status",
+          "description": "Update package status",
+          "requiresAuth": true,
+          "requiredRole": "admin",
+          "pathParams": {
+            "id": "number (required)"
+          },
+          "payload": {
+            "status": "string (required: active, inactive, expired)"
+          },
+          "response": {
+            "success": {
+              "id": 1,
+              "status": "active",
+              "updated_at": "2024-01-15T10:30:00Z"
+            }
+          }
+        },
+        "getAnalytics": {
+          "method": "GET",
+          "url": "/admin/packages/{id}/analytics",
+          "description": "Get package analytics",
+          "requiresAuth": true,
+          "requiredRole": "admin",
+          "pathParams": {
+            "id": "number (required)"
+          },
+          "response": {
+            "success": {
+              "package_id": 1,
+              "total_sold": 150,
+              "total_revenue": 194999.50,
+              "products_count": 3,
+              "status": "active",
+              "is_featured": true
+            }
+          }
+        },
+        "getStats": {
+          "method": "GET",
+          "url": "/admin/packages/stats",
+          "description": "Get package statistics",
+          "requiresAuth": true,
+          "requiredRole": "admin",
+          "response": {
+            "success": {
+              "total_packages": 25,
+              "active_packages": 20,
+              "inactive_packages": 3,
+              "expired_packages": 2,
+              "featured_packages": 5
+            }
+          }
+        }
+      }
+    }
+  },
+  "errorResponses": {
+    "400": {
+      "statusCode": 400,
+      "message": "Bad Request - Invalid input data",
+      "error": "Bad Request"
+    },
+    "401": {
+      "statusCode": 401,
+      "message": "Unauthorized - Invalid or missing token",
+      "error": "Unauthorized"
+    },
+    "403": {
+      "statusCode": 403,
+      "message": "Forbidden - Insufficient permissions",
+      "error": "Forbidden"
+    },
+    "404": {
+      "statusCode": 404,
+      "message": "Not Found - Resource not found",
+      "error": "Not Found"
+    },
+    "422": {
+      "statusCode": 422,
+      "message": "Validation failed",
+      "error": "Unprocessable Entity",
+      "details": [
+        {
+          "field": "email",
+          "message": "Email must be a valid email address"
+        }
+      ]
+    },
+    "500": {
+      "statusCode": 500,
+      "message": "Internal Server Error",
+      "error": "Internal Server Error"
+    }
+  },
+  "enums": {
+    "OrderStatus": [
+      "pending",
+      "confirmed", 
+      "processing",
+      "shipped",
+      "delivered",
+      "cancelled",
+      "refunded"
+    ],
+    "PaymentStatus": [
+      "pending",
+      "paid",
+      "failed",
+      "refunded",
+      "partially_refunded"
+    ],
+    "ProductStatus": [
+      "active",
+      "inactive",
+      "draft"
+    ],
+    "RoleType": [
+      "admin",
+      "customer",
+      "manager",
+      "staff"
+    ],
+    "PackageStatus": [
+      "active",
+      "inactive",
+      "expired"
+    ]
+  },
+  "notes": {
+    "authentication": "All admin endpoints require a valid JWT token with admin role",
+    "pagination": "Most list endpoints support pagination with page and limit parameters",
+    "search": "Search parameters are case-insensitive and support partial matches",
+    "sorting": "Sort parameters support asc/desc ordering on specified fields",
+    "validation": "All input data is validated according to the specified constraints",
+    "rateLimit": "API may implement rate limiting for security purposes"
+  }
+}

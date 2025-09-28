@@ -5,15 +5,14 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   ManyToMany,
-  JoinTable,
-} from 'typeorm';
-import { User } from 'src/user/entities/user.entity';
+} from "typeorm";
+import { User } from "src/user/entities/user.entity";
 
 export enum RoleType {
-  ADMIN = 'admin',
-  CUSTOMER = 'customer',
-  MANAGER = 'manager',
-  STAFF = 'staff',
+  ADMIN = "admin",
+  CUSTOMER = "customer",
+  MANAGER = "manager",
+  STAFF = "staff",
 }
 
 @Entity()
@@ -27,10 +26,10 @@ export class Role {
   @Column()
   details: string;
 
-  @Column({ type: 'enum', enum: RoleType, default: RoleType.CUSTOMER })
+  @Column({ type: "enum", enum: RoleType, default: RoleType.CUSTOMER })
   type: RoleType;
 
-  @Column({ type: 'json', nullable: true })
+  @Column({ type: "json", nullable: true })
   permissions: {
     users?: {
       create?: boolean;
@@ -87,11 +86,6 @@ export class Role {
   @UpdateDateColumn()
   updated_at: Date;
 
-  @ManyToMany(() => User)
-  @JoinTable({
-    name: 'user_roles',
-    joinColumn: { name: 'role_id', referencedColumnName: 'id' },
-    inverseJoinColumn: { name: 'user_id', referencedColumnName: 'id' },
-  })
+  @ManyToMany(() => User, (user) => user.roles)
   users: User[];
 }

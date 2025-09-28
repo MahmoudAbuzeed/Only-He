@@ -1,4 +1,12 @@
-import { IsString, IsNotEmpty, IsOptional, IsBoolean, IsNumber, IsUrl } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsOptional,
+  IsBoolean,
+  IsNumber,
+  IsUrl,
+  ValidateIf,
+} from "class-validator";
 
 export class CreateCategoryDto {
   @IsString()
@@ -9,8 +17,9 @@ export class CreateCategoryDto {
   @IsOptional()
   description?: string;
 
-  @IsUrl()
   @IsOptional()
+  @ValidateIf((o) => o.image_url && o.image_url.trim() !== "")
+  @IsUrl({}, { message: "Image URL must be a valid URL" })
   image_url?: string;
 
   @IsBoolean()
@@ -24,4 +33,16 @@ export class CreateCategoryDto {
   @IsNumber()
   @IsOptional()
   parent_id?: number;
+
+  @IsString()
+  @IsOptional()
+  slug?: string;
+
+  @IsString()
+  @IsOptional()
+  meta_title?: string;
+
+  @IsString()
+  @IsOptional()
+  meta_description?: string;
 }

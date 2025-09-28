@@ -24,7 +24,7 @@ services:
       dockerfile: ./Dockerfile
     image: node-postgres-app
     ports:
-      - "3002:3002"
+      - "7002:7002"
     environment:
       DATABASE_HOST: postgres
       DATABASE_PORT: 5432
@@ -32,6 +32,7 @@ services:
       DATABASE_PASSWORD: postgres
       DATABASE_NAME: only_he_db
       NODE_ENV: development
+      PORT: 7002
     volumes:
       - ./:/app
       - /app/node_modules
