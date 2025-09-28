@@ -1,0 +1,323 @@
+name: Deploy Only-He API to AWS
+
+on:
+  push:
+    branches: [main, master]
+    paths-ignore:
+      - 'README.md'
+      - 'docs/**'
+      - '*.md'
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REPOSITORY: only-he-api
+  APP_RUNNER_SERVICE: only-he-api-production
+  RDS_DB_IDENTIFIER: only-he-api-postgres
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Verify AWS credentials
+        run: |
+          echo "🔍 Verifying AWS credentials..."
+          aws sts get-caller-identity
+          echo "✅ AWS credentials verified"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Create ECR repository if it doesn't exist
+        run: |
+          echo "🏗️ Ensuring ECR repository exists..."
+          aws ecr describe-repositories --repository-names $ECR_REPOSITORY --region $AWS_REGION || \
+          aws ecr create-repository \
+            --repository-name $ECR_REPOSITORY \
+            --region $AWS_REGION \
+            --image-scanning-configuration scanOnPush=true \
+            --encryption-configuration encryptionType=AES256
+          echo "✅ ECR repository ready"
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        run: |
+          echo "🔐 Logging into ECR..."
+          aws ecr get-login-password --region ${{ env.AWS_REGION }} | docker login --username AWS --password-stdin ${{ steps.get-account-id.outputs.account-id }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com
+          echo "registry=${{ steps.get-account-id.outputs.account-id }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com" >> $GITHUB_OUTPUT
+          echo "✅ ECR login successful"
+
+      - name: Get AWS Account ID
+        id: get-account-id
+        run: |
+          ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+          echo "account-id=$ACCOUNT_ID" >> $GITHUB_OUTPUT
+          echo "AWS Account ID: $ACCOUNT_ID"
+
+      - name: Build, tag, and push image to Amazon ECR
+        id: build-image
+        env:
+          ECR_REGISTRY: ${{ steps.get-account-id.outputs.account-id }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          echo "🏗️ Building Docker image..."
+          docker build -f Dockerfile.prod -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          docker build -f Dockerfile.prod -t $ECR_REGISTRY/$ECR_REPOSITORY:latest .
+          
+          echo "📤 Pushing to ECR repository: $ECR_REPOSITORY"
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          
+          echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+          echo "✅ Image pushed successfully"
+
+      - name: Create RDS PostgreSQL database if it doesn't exist
+        run: |
+          echo "🗄️ Checking if RDS database exists..."
+          
+          if aws rds describe-db-instances --db-instance-identifier $RDS_DB_IDENTIFIER --region $AWS_REGION >/dev/null 2>&1; then
+            echo "✅ RDS database already exists"
+          else
+            echo "🆕 Creating RDS PostgreSQL database..."
+            
+            # Create DB subnet group
+            aws rds create-db-subnet-group \
+              --db-subnet-group-name $RDS_DB_IDENTIFIER-subnet-group \
+              --db-subnet-group-description "Subnet group for $RDS_DB_IDENTIFIER" \
+              --subnet-ids $(aws ec2 describe-subnets --query 'Subnets[?AvailabilityZone==`us-east-1a` || AvailabilityZone==`us-east-1b`].SubnetId' --output text | tr '\t' ' ') \
+              --region $AWS_REGION || echo "Subnet group might already exist"
+            
+            # Create security group
+            VPC_ID=$(aws ec2 describe-vpcs --filters "Name=is-default,Values=true" --query 'Vpcs[0].VpcId' --output text --region $AWS_REGION)
+            SG_ID=$(aws ec2 create-security-group \
+              --group-name $RDS_DB_IDENTIFIER-sg \
+              --description "Security group for $RDS_DB_IDENTIFIER" \
+              --vpc-id $VPC_ID \
+              --region $AWS_REGION \
+              --query 'GroupId' --output text 2>/dev/null || \
+              aws ec2 describe-security-groups \
+                --filters "Name=group-name,Values=$RDS_DB_IDENTIFIER-sg" \
+                --query 'SecurityGroups[0].GroupId' --output text --region $AWS_REGION)
+            
+            # Allow PostgreSQL access
+            aws ec2 authorize-security-group-ingress \
+              --group-id $SG_ID \
+              --protocol tcp \
+              --port 5432 \
+              --cidr 0.0.0.0/0 \
+              --region $AWS_REGION || echo "Security group rule might already exist"
+            
+            # Create RDS instance
+            aws rds create-db-instance \
+              --db-instance-identifier $RDS_DB_IDENTIFIER \
+              --db-instance-class db.t3.micro \
+              --engine postgres \
+              --engine-version 15.7 \
+              --master-username postgres \
+              --master-user-password "${{ secrets.DATABASE_PASSWORD }}" \
+              --allocated-storage 20 \
+              --max-allocated-storage 100 \
+              --storage-type gp2 \
+              --storage-encrypted \
+              --vpc-security-group-ids $SG_ID \
+              --db-subnet-group-name $RDS_DB_IDENTIFIER-subnet-group \
+              --backup-retention-period 7 \
+              --multi-az false \
+              --publicly-accessible true \
+              --auto-minor-version-upgrade true \
+              --deletion-protection false \
+              --enable-performance-insights \
+              --performance-insights-retention-period 7 \
+              --region $AWS_REGION
+            
+            echo "⏳ Waiting for RDS instance to be available..."
+            aws rds wait db-instance-available --db-instance-identifier $RDS_DB_IDENTIFIER --region $AWS_REGION
+            echo "✅ RDS database created successfully"
+          fi
+
+      - name: Get RDS endpoint
+        id: get-rds-endpoint
+        run: |
+          RDS_ENDPOINT=$(aws rds describe-db-instances \
+            --db-instance-identifier $RDS_DB_IDENTIFIER \
+            --query 'DBInstances[0].Endpoint.Address' \
+            --output text --region $AWS_REGION)
+          echo "rds-endpoint=$RDS_ENDPOINT" >> $GITHUB_OUTPUT
+          echo "RDS Endpoint: $RDS_ENDPOINT"
+
+      - name: Create App Runner service or update existing one
+        env:
+          IMAGE_URI: ${{ steps.build-image.outputs.image }}
+          RDS_ENDPOINT: ${{ steps.get-rds-endpoint.outputs.rds-endpoint }}
+        run: |
+          echo "🚀 Deploying to App Runner..."
+          
+          # Check if service exists
+          SERVICE_ARN=$(aws apprunner list-services \
+            --query "ServiceSummaryList[?ServiceName=='$APP_RUNNER_SERVICE'].ServiceArn" \
+            --output text --region $AWS_REGION)
+          
+          if [ -z "$SERVICE_ARN" ]; then
+            echo "🆕 Creating new App Runner service..."
+            
+            # Create IAM role for App Runner
+            ROLE_NAME="AppRunnerECRAccessRole-$APP_RUNNER_SERVICE"
+            
+            # Create trust policy
+            cat > trust-policy.json << EOF
+          {
+            "Version": "2012-10-17",
+            "Statement": [
+              {
+                "Effect": "Allow",
+                "Principal": {
+                  "Service": "build.apprunner.amazonaws.com"
+                },
+                "Action": "sts:AssumeRole"
+              }
+            ]
+          }
+          EOF
+            
+            # Create role
+            aws iam create-role \
+              --role-name $ROLE_NAME \
+              --assume-role-policy-document file://trust-policy.json \
+              --region $AWS_REGION || echo "Role might already exist"
+            
+            # Attach policy
+            aws iam attach-role-policy \
+              --role-name $ROLE_NAME \
+              --policy-arn arn:aws:iam::aws:policy/service-role/AWSAppRunnerServicePolicyForECRAccess \
+              --region $AWS_REGION || echo "Policy might already be attached"
+            
+            # Get role ARN
+            ROLE_ARN=$(aws iam get-role --role-name $ROLE_NAME --query 'Role.Arn' --output text --region $AWS_REGION)
+            
+            # Create App Runner service
+            aws apprunner create-service \
+              --service-name "$APP_RUNNER_SERVICE" \
+              --source-configuration '{
+                "ImageRepository": {
+                  "ImageIdentifier": "'$IMAGE_URI'",
+                  "ImageConfiguration": {
+                    "Port": "7002",
+                    "RuntimeEnvironmentVariables": {
+                      "NODE_ENV": "production",
+                      "PORT": "7002",
+                      "DATABASE_HOST": "'$RDS_ENDPOINT'",
+                      "DATABASE_PORT": "5432",
+                      "DATABASE_NAME": "postgres",
+                      "DATABASE_USER": "postgres",
+                      "DATABASE_PASSWORD": "'${{ secrets.DATABASE_PASSWORD }}'",
+                      "JWT_SECRET": "'${{ secrets.JWT_SECRET }}'",
+                      "CORS_ORIGIN": "*",
+                      "LOG_LEVEL": "info",
+                      "BCRYPT_ROUNDS": "10"
+                    }
+                  },
+                  "ImageRepositoryType": "ECR"
+                },
+                "AutoDeploymentsEnabled": true,
+                "AuthenticationConfiguration": {
+                  "AccessRoleArn": "'$ROLE_ARN'"
+                }
+              }' \
+              --instance-configuration '{
+                "Cpu": "0.25 vCPU",
+                "Memory": "0.5 GB"
+              }' \
+              --health-check-configuration '{
+                "Protocol": "HTTP",
+                "Path": "/api/v1",
+                "Interval": 10,
+                "Timeout": 5,
+                "HealthyThreshold": 1,
+                "UnhealthyThreshold": 5
+              }' \
+              --region $AWS_REGION
+            
+            echo "✅ App Runner service created successfully!"
+            
+            # Wait for service to be ready
+            echo "⏳ Waiting for service to become running..."
+            SERVICE_ARN=$(aws apprunner list-services \
+              --query "ServiceSummaryList[?ServiceName=='$APP_RUNNER_SERVICE'].ServiceArn" \
+              --output text --region $AWS_REGION)
+            aws apprunner wait service-running --service-arn "$SERVICE_ARN" --region $AWS_REGION
+            echo "✅ Service is now running!"
+          else
+            echo "✅ Found existing service: $SERVICE_ARN"
+            echo "🔄 Updating service with new image..."
+            
+            aws apprunner update-service \
+              --service-arn "$SERVICE_ARN" \
+              --source-configuration '{
+                "ImageRepository": {
+                  "ImageIdentifier": "'$IMAGE_URI'",
+                  "ImageConfiguration": {
+                    "Port": "7002",
+                    "RuntimeEnvironmentVariables": {
+                      "NODE_ENV": "production",
+                      "PORT": "7002",
+                      "DATABASE_HOST": "'$RDS_ENDPOINT'",
+                      "DATABASE_PORT": "5432",
+                      "DATABASE_NAME": "postgres",
+                      "DATABASE_USER": "postgres",
+                      "DATABASE_PASSWORD": "'${{ secrets.DATABASE_PASSWORD }}'",
+                      "JWT_SECRET": "'${{ secrets.JWT_SECRET }}'",
+                      "CORS_ORIGIN": "*",
+                      "LOG_LEVEL": "info",
+                      "BCRYPT_ROUNDS": "10"
+                    }
+                  },
+                  "ImageRepositoryType": "ECR"
+                },
+                "AutoDeploymentsEnabled": true
+              }' \
+              --region $AWS_REGION
+            
+            echo "✅ Service update initiated!"
+          fi
+
+      - name: Get service URL and display deployment info
+        run: |
+          echo "🌐 Getting service URL..."
+          SERVICE_ARN=$(aws apprunner list-services \
+            --query "ServiceSummaryList[?ServiceName=='$APP_RUNNER_SERVICE'].ServiceArn" \
+            --output text --region $AWS_REGION)
+          
+          SERVICE_URL=$(aws apprunner describe-service \
+            --service-arn "$SERVICE_ARN" \
+            --query 'Service.ServiceUrl' \
+            --output text --region $AWS_REGION)
+          
+          echo "🚀 Deployment completed successfully!"
+          echo "=================================="
+          echo "🔗 API Base URL: https://$SERVICE_URL/api/v1"
+          echo "📚 Swagger Documentation: https://$SERVICE_URL/api/docs"
+          echo "🔍 Health Check: https://$SERVICE_URL/api/v1"
+          echo ""
+          echo "🔐 Admin Credentials:"
+          echo "📧 Email: admin@only-he.com"
+          echo "🔑 Password: Admin123!"
+          echo ""
+          echo "📊 Infrastructure Created:"
+          echo "• ECR Repository: $ECR_REPOSITORY"
+          echo "• RDS PostgreSQL: $RDS_DB_IDENTIFIER"
+          echo "• App Runner Service: $APP_RUNNER_SERVICE"
+          echo ""
+          echo "✅ Only-He API is now live in production!"

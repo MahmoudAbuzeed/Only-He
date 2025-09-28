@@ -1,0 +1,42 @@
+# AWS App Runner Configuration for Only-He API
+# =============================================
+
+version: 1.0
+runtime: docker
+
+build:
+  commands:
+    build:
+      - echo "Building Only-He API for App Runner"
+      - echo "Using Docker build with production optimizations"
+
+run:
+  runtime-version: latest
+  command: node dist/src/main.js
+  network:
+    port: 7002
+    env: PORT
+  env:
+    # Production environment
+    - name: NODE_ENV
+      value: production
+    - name: LOG_LEVEL
+      value: info
+    - name: BCRYPT_ROUNDS
+      value: "10"
+    
+    # App Runner optimizations
+    - name: WEB_CONCURRENCY
+      value: "1"
+    - name: TIMEOUT
+      value: "120"
+    
+    # Database configuration (set by GitHub Actions)
+    # These are automatically injected during deployment:
+    # - DATABASE_HOST
+    # - DATABASE_PORT
+    # - DATABASE_NAME
+    # - DATABASE_USER
+    # - DATABASE_PASSWORD
+    # - JWT_SECRET
+    # - CORS_ORIGIN

@@ -269,18 +269,21 @@ The application uses PostgreSQL with the following main entities:
 - **Permission System**: Granular permissions for different operations
 - **Guards**: Route protection with custom decorators
 
-## 🚀 Deployment
+## 🚀 AWS Deployment
 
-### Production Environment Variables
+For production deployment to AWS, see [DEPLOYMENT-GUIDE.md](DEPLOYMENT-GUIDE.md) for a complete guide.
 
-```env
-NODE_ENV=production
-DATABASE_HOST=your-production-db-host
-DATABASE_PASSWORD=secure-production-password
-JWT_SECRET=super-secure-production-secret
+Generate secure secrets with:
+```bash
+./scripts/generate-secrets.sh
 ```
 
-### Build for Production
+### Quick Deploy
+1. Add GitHub Secrets (AWS credentials, database password, JWT secret)
+2. Push to main branch
+3. GitHub Actions automatically deploys to AWS App Runner
+
+### Local Production Build
 
 ```bash
 npm run build
