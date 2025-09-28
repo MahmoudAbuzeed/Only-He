@@ -52,6 +52,13 @@ jobs:
             --encryption-configuration encryptionType=AES256
           echo "✅ ECR repository ready"
 
+      - name: Get AWS Account ID
+        id: get-account-id
+        run: |
+          ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+          echo "account-id=$ACCOUNT_ID" >> $GITHUB_OUTPUT
+          echo "AWS Account ID: $ACCOUNT_ID"
+
       - name: Login to Amazon ECR
         id: login-ecr
         run: |
@@ -59,13 +66,6 @@ jobs:
           aws ecr get-login-password --region ${{ env.AWS_REGION }} | docker login --username AWS --password-stdin ${{ steps.get-account-id.outputs.account-id }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com
           echo "registry=${{ steps.get-account-id.outputs.account-id }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com" >> $GITHUB_OUTPUT
           echo "✅ ECR login successful"
-
-      - name: Get AWS Account ID
-        id: get-account-id
-        run: |
-          ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
-          echo "account-id=$ACCOUNT_ID" >> $GITHUB_OUTPUT
-          echo "AWS Account ID: $ACCOUNT_ID"
 
       - name: Build, tag, and push image to Amazon ECR
         id: build-image
