@@ -9,8 +9,9 @@ async function bootstrap() {
   const logger = app.get(Logger);
 
   // Deployment timestamp: 2025-09-29 - Fixed database connectivity for App Runner
-  console.log('🚀 Only-He API starting up...');
-  
+  // RDS is now publicly accessible - should resolve connection timeouts
+  console.log("🚀 Only-He API starting up...");
+
   // app.useLogger(logger);
   // Set global prefix
   app.setGlobalPrefix("api/v1");
