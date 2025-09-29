@@ -165,14 +165,14 @@ jobs:
             --output text --region $AWS_REGION)
           echo "rds-endpoint=$RDS_ENDPOINT" >> $GITHUB_OUTPUT
           echo "RDS Endpoint: $RDS_ENDPOINT"
-          
+
           # Ensure security group allows access
           echo "🔐 Updating security group for database access..."
           VPC_ID=$(aws ec2 describe-vpcs --filters "Name=is-default,Values=true" --query 'Vpcs[0].VpcId' --output text --region $AWS_REGION)
           SG_ID=$(aws ec2 describe-security-groups \
             --filters "Name=group-name,Values=$RDS_DB_IDENTIFIER-sg" \
             --query 'SecurityGroups[0].GroupId' --output text --region $AWS_REGION)
-          
+
           if [ "$SG_ID" != "None" ] && [ "$SG_ID" != "" ]; then
             # Add ingress rule for PostgreSQL
             aws ec2 authorize-security-group-ingress \
@@ -182,11 +182,11 @@ jobs:
               --cidr 0.0.0.0/0 \
               --region $AWS_REGION || echo "Ingress rule might already exist"
           fi
-          
+
           # Wait a bit for security group changes to propagate
           echo "⏳ Waiting for security group changes to propagate..."
           sleep 30
-          
+
           echo "✅ Database security group updated - TypeORM will handle database creation"
 
       - name: Create App Runner service or update existing one
