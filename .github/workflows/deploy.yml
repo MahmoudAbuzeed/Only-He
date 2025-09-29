@@ -112,13 +112,21 @@ jobs:
                 --filters "Name=group-name,Values=$RDS_DB_IDENTIFIER-sg" \
                 --query 'SecurityGroups[0].GroupId' --output text --region $AWS_REGION)
             
-            # Allow PostgreSQL access
+            # Allow PostgreSQL access from anywhere (for GitHub Actions and App Runner)
             aws ec2 authorize-security-group-ingress \
               --group-id $SG_ID \
               --protocol tcp \
               --port 5432 \
               --cidr 0.0.0.0/0 \
               --region $AWS_REGION || echo "Security group rule might already exist"
+            
+            # Also ensure the security group allows outbound connections
+            aws ec2 authorize-security-group-egress \
+              --group-id $SG_ID \
+              --protocol tcp \
+              --port 5432 \
+              --cidr 0.0.0.0/0 \
+              --region $AWS_REGION || echo "Egress rule might already exist"
             
             # Create RDS instance
             aws rds create-db-instance \
@@ -128,7 +136,6 @@ jobs:
               --engine-version 15.7 \
               --master-username postgres \
               --master-user-password "${{ secrets.DATABASE_PASSWORD }}" \
-              --db-name only_he_db \
               --allocated-storage 20 \
               --max-allocated-storage 100 \
               --storage-type gp2 \
@@ -159,14 +166,28 @@ jobs:
           echo "rds-endpoint=$RDS_ENDPOINT" >> $GITHUB_OUTPUT
           echo "RDS Endpoint: $RDS_ENDPOINT"
           
-          # Install PostgreSQL client
-          sudo apt-get update
-          sudo apt-get install -y postgresql-client
+          # Ensure security group allows access
+          echo "🔐 Updating security group for database access..."
+          VPC_ID=$(aws ec2 describe-vpcs --filters "Name=is-default,Values=true" --query 'Vpcs[0].VpcId' --output text --region $AWS_REGION)
+          SG_ID=$(aws ec2 describe-security-groups \
+            --filters "Name=group-name,Values=$RDS_DB_IDENTIFIER-sg" \
+            --query 'SecurityGroups[0].GroupId' --output text --region $AWS_REGION)
           
-          # Create database if it doesn't exist
-          echo "🗄️ Ensuring database 'only_he_db' exists..."
-          PGPASSWORD="${{ secrets.DATABASE_PASSWORD }}" psql -h "$RDS_ENDPOINT" -U postgres -d postgres -c "CREATE DATABASE only_he_db;" || echo "Database might already exist"
-          echo "✅ Database ready"
+          if [ "$SG_ID" != "None" ] && [ "$SG_ID" != "" ]; then
+            # Add ingress rule for PostgreSQL
+            aws ec2 authorize-security-group-ingress \
+              --group-id $SG_ID \
+              --protocol tcp \
+              --port 5432 \
+              --cidr 0.0.0.0/0 \
+              --region $AWS_REGION || echo "Ingress rule might already exist"
+          fi
+          
+          # Wait a bit for security group changes to propagate
+          echo "⏳ Waiting for security group changes to propagate..."
+          sleep 30
+          
+          echo "✅ Database security group updated - TypeORM will handle database creation"
 
       - name: Create App Runner service or update existing one
         env:
@@ -230,7 +251,7 @@ jobs:
                       "PORT": "7002",
                       "DATABASE_HOST": "'$RDS_ENDPOINT'",
                       "DATABASE_PORT": "5432",
-                      "DATABASE_NAME": "only_he_db",
+                      "DATABASE_NAME": "postgres",
                       "DATABASE_USER": "postgres",
                       "DATABASE_PASSWORD": "'${{ secrets.DATABASE_PASSWORD }}'",
                       "JWT_SECRET": "'${{ secrets.JWT_SECRET }}'",
@@ -302,7 +323,7 @@ jobs:
                       "PORT": "7002",
                       "DATABASE_HOST": "'$RDS_ENDPOINT'",
                       "DATABASE_PORT": "5432",
-                      "DATABASE_NAME": "only_he_db",
+                      "DATABASE_NAME": "postgres",
                       "DATABASE_USER": "postgres",
                       "DATABASE_PASSWORD": "'${{ secrets.DATABASE_PASSWORD }}'",
                       "JWT_SECRET": "'${{ secrets.JWT_SECRET }}'",
