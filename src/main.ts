@@ -8,6 +8,9 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule, { cors: true });
   const logger = app.get(Logger);
 
+  // Deployment timestamp: 2025-09-29 - Fixed database connectivity for App Runner
+  console.log('🚀 Only-He API starting up...');
+  
   // app.useLogger(logger);
   // Set global prefix
   app.setGlobalPrefix("api/v1");
@@ -67,9 +70,10 @@ async function bootstrap() {
 
   const port = process.env.PORT || 7002;
   await app.listen(port);
-  console.log(`Application is running on: http://localhost:${port}/api/v1`);
+  console.log(`✅ Application is running on: http://localhost:${port}/api/v1`);
   console.log(
-    `API Documentation available at: http://localhost:${port}/api/docs`
+    `📚 API Documentation available at: http://localhost:${port}/api/docs`
   );
+  console.log(`🎉 Only-He API successfully started on port ${port}!`);
 }
 bootstrap();
