@@ -12,7 +12,7 @@ env:
   AWS_REGION: us-east-1
   ECR_REPOSITORY: only-he-api
   APP_RUNNER_SERVICE: only-he-api-production
-  RDS_DB_IDENTIFIER: only-he-api-postgres
+  RDS_DB_IDENTIFIER: only-he-api-postgres-public
 
 jobs:
   deploy:
