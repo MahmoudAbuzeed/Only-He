@@ -7,6 +7,7 @@ import { CartModule } from "./cart/cart.module";
 import { OrderModule } from "./order/order.module";
 import { FavoriteModule } from "./favorite/favorite.module";
 import { AdminModule } from "./admin/admin.module";
+import { ImagesModule } from "./images/images.module";
 
 export const modules = [
   UserModule,
@@ -18,4 +19,5 @@ export const modules = [
   OrderModule,
   FavoriteModule,
   AdminModule,
+  ImagesModule,
 ];

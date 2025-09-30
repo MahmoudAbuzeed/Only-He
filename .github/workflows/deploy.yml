@@ -257,7 +257,11 @@ jobs:
                       "JWT_SECRET": "'${{ secrets.JWT_SECRET }}'",
                       "CORS_ORIGIN": "*",
                       "LOG_LEVEL": "info",
-                      "BCRYPT_ROUNDS": "10"
+                      "BCRYPT_ROUNDS": "10",
+                      "AWS_REGION": "us-east-1",
+                      "AWS_S3_BUCKET_NAME": "only-he-images",
+                      "AWS_ACCESS_KEY_ID": "'${{ secrets.AWS_ACCESS_KEY_ID }}'",
+                      "AWS_SECRET_ACCESS_KEY": "'${{ secrets.AWS_SECRET_ACCESS_KEY }}'"
                     }
                   },
                   "ImageRepositoryType": "ECR"
@@ -329,7 +333,11 @@ jobs:
                       "JWT_SECRET": "'${{ secrets.JWT_SECRET }}'",
                       "CORS_ORIGIN": "*",
                       "LOG_LEVEL": "info",
-                      "BCRYPT_ROUNDS": "10"
+                      "BCRYPT_ROUNDS": "10",
+                      "AWS_REGION": "us-east-1",
+                      "AWS_S3_BUCKET_NAME": "only-he-images",
+                      "AWS_ACCESS_KEY_ID": "'${{ secrets.AWS_ACCESS_KEY_ID }}'",
+                      "AWS_SECRET_ACCESS_KEY": "'${{ secrets.AWS_SECRET_ACCESS_KEY }}'"
                     }
                   },
                   "ImageRepositoryType": "ECR"

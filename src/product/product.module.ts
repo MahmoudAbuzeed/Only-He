@@ -8,12 +8,14 @@ import { ProductRepository } from './product.repository';
 import { OrderItem } from '../order/entities/order-item.entity';
 import { CartItem } from '../cart/entities/cart-item.entity';
 import { CategoryModule } from '../category/category.module';
+import { ImagesModule } from '../images/images.module';
 import { ErrorHandler } from 'shared/errorHandler.service';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Product, OrderItem, CartItem]),
     CategoryModule, // Import CategoryModule to access CategoryRepository
+    ImagesModule, // Import ImagesModule to access ImagesService
   ],
   controllers: [ProductController],
   providers: [ProductService, ProductRepository, ErrorHandler],

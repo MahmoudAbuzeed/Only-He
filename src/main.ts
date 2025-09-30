@@ -50,7 +50,10 @@ async function bootstrap() {
       "JWT-auth"
     )
     .addServer("http://localhost:7002", "Development server")
-    .addServer("https://z5cpphjngn.us-east-1.awsapprunner.com", "Production server")
+    .addServer(
+      "https://z5cpphjngn.us-east-1.awsapprunner.com",
+      "Production server"
+    )
     .build();
 
   const document = SwaggerModule.createDocument(app, config);

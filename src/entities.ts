@@ -11,6 +11,7 @@ import { Order } from "./order/entities/order.entity";
 import { OrderItem } from "./order/entities/order-item.entity";
 import { Payment } from "./payment/entities/payment.entity";
 import { Favorite } from "./favorite/entities/favorite.entity";
+import { Image } from "./images/entities/image.entity";
 
 export const entities = [
   User,
@@ -26,4 +27,5 @@ export const entities = [
   OrderItem,
   Payment,
   Favorite,
+  Image,
 ];

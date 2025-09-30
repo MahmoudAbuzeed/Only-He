@@ -9,6 +9,8 @@ import { CategoryRepository } from '../category/category.repository';
 import { OrderItem } from '../order/entities/order-item.entity';
 import { CartItem } from '../cart/entities/cart-item.entity';
 import { ErrorHandler } from 'shared/errorHandler.service';
+import { ImagesService } from '../images/images.service';
+import { ImageType } from '../images/entities/image.entity';
 import {
   CREATED_SUCCESSFULLY,
   DELETED_SUCCESSFULLY,
@@ -25,6 +27,7 @@ export class ProductService {
     @InjectRepository(CartItem)
     private readonly cartItemRepository: Repository<CartItem>,
     private readonly errorHandler: ErrorHandler,
+    private readonly imagesService: ImagesService,
   ) {}
 
   async create(createProductDto: CreateProductDto) {
@@ -57,7 +60,7 @@ export class ProductService {
   async findAll() {
     try {
       const products = await this.productRepository.findAll();
-      return products;
+      return await this.includeImagesInProducts(products);
     } catch (error) {
       throw this.errorHandler.badRequest(error);
     }
@@ -66,6 +69,9 @@ export class ProductService {
   async findWithFilters(filters: ProductFilterDto) {
     try {
       const result = await this.productRepository.findWithFilters(filters);
+      if (result.products) {
+        result.products = await this.includeImagesInProducts(result.products);
+      }
       return result;
     } catch (error) {
       throw this.errorHandler.badRequest(error);
@@ -75,7 +81,7 @@ export class ProductService {
   async findActive() {
     try {
       const products = await this.productRepository.findActive();
-      return products;
+      return await this.includeImagesInProducts(products);
     } catch (error) {
       throw this.errorHandler.badRequest(error);
     }
@@ -292,6 +298,22 @@ export class ProductService {
     } catch (error) {
       return false;
     }
+  }
+
+  private async includeImagesInProducts(products: any[]): Promise<any[]> {
+    if (!products || products.length === 0) {
+      return products;
+    }
+
+    const productIds = products.map(product => product.id);
+    const imagesMap = await this.imagesService.getImagesByEntities(ImageType.PRODUCT, productIds);
+    const primaryImagesMap = await this.imagesService.getPrimaryImagesByEntities(ImageType.PRODUCT, productIds);
+
+    return products.map(product => ({
+      ...product,
+      images: this.imagesService.formatImagesForResponse(imagesMap[product.id] || []),
+      primary_image: this.imagesService.formatImageForResponse(primaryImagesMap[product.id]),
+    }));
   }
 
   private generateSlug(name: string): string {
