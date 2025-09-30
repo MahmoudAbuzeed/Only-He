@@ -1,41 +1,47 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
-import { ImagesRepository } from './images.repository';
-import { S3Service } from './services/s3.service';
-import { Image, ImageType } from './entities/image.entity';
-import { UploadImageDto } from './dto/upload-image.dto';
-import { UpdateImageDto } from './dto/update-image.dto';
-import { Express } from 'express';
-import 'multer';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from "@nestjs/common";
+import { ImagesRepository } from "./images.repository";
+import { S3Service } from "./services/s3.service";
+import { Image, ImageType } from "./entities/image.entity";
+import { UploadImageDto } from "./dto/upload-image.dto";
+import { UpdateImageDto } from "./dto/update-image.dto";
+import { Express } from "express";
+import "multer";
 
 @Injectable()
 export class ImagesService {
   constructor(
     private readonly imagesRepository: ImagesRepository,
-    private readonly s3Service: S3Service,
+    private readonly s3Service: S3Service
   ) {}
 
   async uploadImage(
     file: Express.Multer.File,
-    uploadImageDto: UploadImageDto,
+    uploadImageDto: UploadImageDto
   ): Promise<Image> {
     if (!file) {
-      throw new BadRequestException('No file provided');
+      throw new BadRequestException("No file provided");
     }
 
     // Validate file type
-    if (!file.mimetype.startsWith('image/')) {
-      throw new BadRequestException('File must be an image');
+    if (!file.mimetype.startsWith("image/")) {
+      throw new BadRequestException("File must be an image");
     }
 
     // Validate file size (max 10MB)
     const maxSize = 10 * 1024 * 1024; // 10MB
     if (file.size > maxSize) {
-      throw new BadRequestException('File size must be less than 10MB');
+      throw new BadRequestException("File size must be less than 10MB");
     }
 
     try {
       // Get folder path based on entity type
-      const folderPath = this.s3Service.getFolderPath(uploadImageDto.entity_type);
+      const folderPath = this.s3Service.getFolderPath(
+        uploadImageDto.entity_type
+      );
 
       // Upload to S3
       const uploadResult = await this.s3Service.uploadImage(file, folderPath, {
@@ -48,7 +54,7 @@ export class ImagesService {
         await this.imagesRepository.setPrimaryImage(
           uploadImageDto.entity_type,
           uploadImageDto.entity_id,
-          0, // Will be updated after creation
+          0 // Will be updated after creation
         );
       }
 
@@ -77,7 +83,7 @@ export class ImagesService {
         await this.imagesRepository.setPrimaryImage(
           uploadImageDto.entity_type,
           uploadImageDto.entity_id,
-          savedImage.id,
+          savedImage.id
         );
         savedImage.is_primary = true;
       }
@@ -88,23 +94,32 @@ export class ImagesService {
     }
   }
 
-  async findImagesByEntity(entityType: ImageType, entityId: number): Promise<Image[]> {
+  async findImagesByEntity(
+    entityType: ImageType,
+    entityId: number
+  ): Promise<Image[]> {
     return await this.imagesRepository.findByEntity(entityType, entityId);
   }
 
-  async findPrimaryImage(entityType: ImageType, entityId: number): Promise<Image | null> {
+  async findPrimaryImage(
+    entityType: ImageType,
+    entityId: number
+  ): Promise<Image | null> {
     return await this.imagesRepository.findPrimaryImage(entityType, entityId);
   }
 
   async findImageById(id: number): Promise<Image> {
     const image = await this.imagesRepository.findById(id);
     if (!image) {
-      throw new NotFoundException('Image not found');
+      throw new NotFoundException("Image not found");
     }
     return image;
   }
 
-  async updateImage(id: number, updateImageDto: UpdateImageDto): Promise<Image> {
+  async updateImage(
+    id: number,
+    updateImageDto: UpdateImageDto
+  ): Promise<Image> {
     const image = await this.findImageById(id);
 
     // If setting as primary, remove primary flag from other images
@@ -112,13 +127,13 @@ export class ImagesService {
       await this.imagesRepository.setPrimaryImage(
         image.entity_type,
         image.entity_id,
-        id,
+        id
       );
     }
 
     const updatedImage = await this.imagesRepository.update(id, updateImageDto);
     if (!updatedImage) {
-      throw new NotFoundException('Image not found');
+      throw new NotFoundException("Image not found");
     }
 
     return updatedImage;
@@ -141,11 +156,11 @@ export class ImagesService {
 
   async setPrimaryImage(id: number): Promise<Image> {
     const image = await this.findImageById(id);
-    
+
     await this.imagesRepository.setPrimaryImage(
       image.entity_type,
       image.entity_id,
-      id,
+      id
     );
 
     return await this.findImageById(id);
@@ -154,17 +169,23 @@ export class ImagesService {
   // Helper method to get images for multiple entities at once
   async getImagesByEntities(
     entityType: ImageType,
-    entityIds: number[],
+    entityIds: number[]
   ): Promise<{ [entityId: number]: Image[] }> {
-    return await this.imagesRepository.getImagesByEntities(entityType, entityIds);
+    return await this.imagesRepository.getImagesByEntities(
+      entityType,
+      entityIds
+    );
   }
 
   // Helper method to get primary images for multiple entities at once
   async getPrimaryImagesByEntities(
     entityType: ImageType,
-    entityIds: number[],
+    entityIds: number[]
   ): Promise<{ [entityId: number]: Image | null }> {
-    return await this.imagesRepository.getPrimaryImagesByEntities(entityType, entityIds);
+    return await this.imagesRepository.getPrimaryImagesByEntities(
+      entityType,
+      entityIds
+    );
   }
 
   // Helper method to format image data for API responses
@@ -185,6 +206,6 @@ export class ImagesService {
 
   // Helper method to format multiple images for API responses
   formatImagesForResponse(images: Image[]): any[] {
-    return images.map(image => this.formatImageForResponse(image));
+    return images.map((image) => this.formatImageForResponse(image));
   }
 }

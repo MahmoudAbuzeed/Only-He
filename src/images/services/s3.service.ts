@@ -1,11 +1,16 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
-import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-import * as sharp from 'sharp';
-import { v4 as uuidv4 } from 'uuid';
-import { Express } from 'express';
-import 'multer';
+import { Injectable, Logger } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
+import {
+  S3Client,
+  PutObjectCommand,
+  DeleteObjectCommand,
+  GetObjectCommand,
+} from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import * as sharp from "sharp";
+import { v4 as uuidv4 } from "uuid";
+import { Express } from "express";
+import "multer";
 
 export interface UploadResult {
   s3_url: string;
@@ -25,28 +30,32 @@ export class S3Service {
   private readonly region: string;
 
   constructor(private configService: ConfigService) {
-    this.region = this.configService.get('AWS_REGION', 'us-east-1');
-    this.bucketName = this.configService.get('AWS_S3_BUCKET_NAME', 'only-he-images');
+    this.region = this.configService.get("AWS_REGION", "us-east-1");
+    this.bucketName = this.configService.get(
+      "AWS_S3_BUCKET_NAME",
+      "only-he-images"
+    );
 
     this.s3Client = new S3Client({
       region: this.region,
       credentials: {
-        accessKeyId: this.configService.get('AWS_ACCESS_KEY_ID'),
-        secretAccessKey: this.configService.get('AWS_SECRET_ACCESS_KEY'),
+        accessKeyId: this.configService.get("AWS_ACCESS_KEY_ID"),
+        secretAccessKey: this.configService.get("AWS_SECRET_ACCESS_KEY"),
       },
     });
   }
 
   async uploadImage(
     file: Express.Multer.File,
-    folder: string = 'images',
+    folder: string = "images",
     options: {
       resize?: { width?: number; height?: number };
       quality?: number;
     } = {}
   ): Promise<UploadResult> {
     try {
-      const fileExtension = file.originalname.split('.').pop()?.toLowerCase() || 'jpg';
+      const fileExtension =
+        file.originalname.split(".").pop()?.toLowerCase() || "jpg";
       const fileName = `${uuidv4()}.${fileExtension}`;
       const s3Key = `${folder}/${fileName}`;
 
@@ -55,28 +64,28 @@ export class S3Service {
       let height: number | undefined;
 
       // Process image with Sharp if it's an image file
-      if (file.mimetype.startsWith('image/')) {
+      if (file.mimetype.startsWith("image/")) {
         const sharpInstance = sharp(file.buffer);
         const metadata = await sharpInstance.metadata();
-        
+
         width = metadata.width;
         height = metadata.height;
 
         // Resize if options provided
         if (options.resize?.width || options.resize?.height) {
           sharpInstance.resize(options.resize.width, options.resize.height, {
-            fit: 'inside',
+            fit: "inside",
             withoutEnlargement: true,
           });
         }
 
         // Set quality
         if (options.quality) {
-          if (fileExtension === 'jpg' || fileExtension === 'jpeg') {
+          if (fileExtension === "jpg" || fileExtension === "jpeg") {
             sharpInstance.jpeg({ quality: options.quality });
-          } else if (fileExtension === 'png') {
+          } else if (fileExtension === "png") {
             sharpInstance.png({ quality: options.quality });
-          } else if (fileExtension === 'webp') {
+          } else if (fileExtension === "webp") {
             sharpInstance.webp({ quality: options.quality });
           }
         }
@@ -90,7 +99,7 @@ export class S3Service {
         Key: s3Key,
         Body: processedBuffer,
         ContentType: file.mimetype,
-        CacheControl: 'max-age=31536000', // 1 year
+        CacheControl: "max-age=31536000", // 1 year
         Metadata: {
           originalName: file.originalname,
           uploadedAt: new Date().toISOString(),
@@ -113,7 +122,10 @@ export class S3Service {
         height,
       };
     } catch (error) {
-      this.logger.error(`Failed to upload image to S3: ${error.message}`, error.stack);
+      this.logger.error(
+        `Failed to upload image to S3: ${error.message}`,
+        error.stack
+      );
       throw new Error(`Failed to upload image: ${error.message}`);
     }
   }
@@ -128,7 +140,10 @@ export class S3Service {
       await this.s3Client.send(deleteCommand);
       this.logger.log(`Successfully deleted image: ${s3Key} from S3`);
     } catch (error) {
-      this.logger.error(`Failed to delete image from S3: ${error.message}`, error.stack);
+      this.logger.error(
+        `Failed to delete image from S3: ${error.message}`,
+        error.stack
+      );
       throw new Error(`Failed to delete image: ${error.message}`);
     }
   }
@@ -140,24 +155,29 @@ export class S3Service {
         Key: s3Key,
       });
 
-      const signedUrl = await getSignedUrl(this.s3Client, command, { expiresIn });
+      const signedUrl = await getSignedUrl(this.s3Client, command, {
+        expiresIn,
+      });
       return signedUrl;
     } catch (error) {
-      this.logger.error(`Failed to generate signed URL: ${error.message}`, error.stack);
+      this.logger.error(
+        `Failed to generate signed URL: ${error.message}`,
+        error.stack
+      );
       throw new Error(`Failed to generate signed URL: ${error.message}`);
     }
   }
 
   getFolderPath(entityType: string): string {
     const folderMap = {
-      product: 'products',
-      category: 'categories',
-      package: 'packages',
-      user_avatar: 'users/avatars',
-      offer: 'offers',
-      banner: 'banners',
+      product: "products",
+      category: "categories",
+      package: "packages",
+      user_avatar: "users/avatars",
+      offer: "offers",
+      banner: "banners",
     };
 
-    return folderMap[entityType] || 'misc';
+    return folderMap[entityType] || "misc";
   }
 }

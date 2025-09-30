@@ -10,10 +10,10 @@ import {
   UseInterceptors,
   ParseIntPipe,
   Query,
-} from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
-import { Express } from 'express';
-import 'multer';
+} from "@nestjs/common";
+import { FileInterceptor } from "@nestjs/platform-express";
+import { Express } from "express";
+import "multer";
 import {
   ApiTags,
   ApiOperation,
@@ -22,114 +22,119 @@ import {
   ApiBody,
   ApiParam,
   ApiQuery,
-} from '@nestjs/swagger';
-import { ImagesService } from './images.service';
-import { UploadImageDto } from './dto/upload-image.dto';
-import { UpdateImageDto } from './dto/update-image.dto';
-import { ImageType } from './entities/image.entity';
+} from "@nestjs/swagger";
+import { ImagesService } from "./images.service";
+import { UploadImageDto } from "./dto/upload-image.dto";
+import { UpdateImageDto } from "./dto/update-image.dto";
+import { ImageType } from "./entities/image.entity";
 
-@ApiTags('Images')
-@Controller('images')
+@ApiTags("Images")
+@Controller("images")
 export class ImagesController {
   constructor(private readonly imagesService: ImagesService) {}
 
-  @Post('upload')
-  @UseInterceptors(FileInterceptor('file'))
+  @Post("upload")
+  @UseInterceptors(FileInterceptor("file"))
   @ApiOperation({
-    summary: 'Upload an image',
-    description: 'Upload an image file to S3 and save metadata to database',
+    summary: "Upload an image",
+    description: "Upload an image file to S3 and save metadata to database",
   })
-  @ApiConsumes('multipart/form-data')
+  @ApiConsumes("multipart/form-data")
   @ApiBody({
-    description: 'Image upload data',
+    description: "Image upload data",
     schema: {
-      type: 'object',
+      type: "object",
       properties: {
         file: {
-          type: 'string',
-          format: 'binary',
-          description: 'Image file to upload',
+          type: "string",
+          format: "binary",
+          description: "Image file to upload",
         },
         entity_type: {
-          type: 'string',
+          type: "string",
           enum: Object.values(ImageType),
-          description: 'Type of entity the image belongs to',
+          description: "Type of entity the image belongs to",
         },
         entity_id: {
-          type: 'integer',
-          description: 'ID of the entity the image belongs to',
+          type: "integer",
+          description: "ID of the entity the image belongs to",
         },
         alt_text: {
-          type: 'string',
-          description: 'Alternative text for the image',
+          type: "string",
+          description: "Alternative text for the image",
         },
         caption: {
-          type: 'string',
-          description: 'Caption for the image',
+          type: "string",
+          description: "Caption for the image",
         },
         is_primary: {
-          type: 'boolean',
-          description: 'Whether this is the primary image for the entity',
+          type: "boolean",
+          description: "Whether this is the primary image for the entity",
         },
         sort_order: {
-          type: 'integer',
-          description: 'Sort order for displaying images',
+          type: "integer",
+          description: "Sort order for displaying images",
         },
       },
-      required: ['file', 'entity_type', 'entity_id'],
+      required: ["file", "entity_type", "entity_id"],
     },
   })
   @ApiResponse({
     status: 201,
-    description: 'Image uploaded successfully',
+    description: "Image uploaded successfully",
     example: {
       id: 1,
-      original_name: 'product-image.jpg',
-      file_name: 'uuid-generated-name.jpg',
-      s3_url: 'https://only-he-images.s3.us-east-1.amazonaws.com/products/uuid-generated-name.jpg',
-      entity_type: 'product',
+      original_name: "product-image.jpg",
+      file_name: "uuid-generated-name.jpg",
+      s3_url:
+        "https://only-he-images.s3.us-east-1.amazonaws.com/products/uuid-generated-name.jpg",
+      entity_type: "product",
       entity_id: 1,
-      mime_type: 'image/jpeg',
+      mime_type: "image/jpeg",
       file_size: 245760,
       width: 800,
       height: 600,
       is_primary: true,
-      alt_text: 'Product main image',
-      created_at: '2025-09-29T12:00:00Z',
+      alt_text: "Product main image",
+      created_at: "2025-09-29T12:00:00Z",
     },
   })
-  @ApiResponse({ status: 400, description: 'Bad request - invalid file or data' })
+  @ApiResponse({
+    status: 400,
+    description: "Bad request - invalid file or data",
+  })
   async uploadImage(
     @UploadedFile() file: Express.Multer.File,
-    @Body() uploadImageDto: UploadImageDto,
+    @Body() uploadImageDto: UploadImageDto
   ) {
     return await this.imagesService.uploadImage(file, uploadImageDto);
   }
 
-  @Get('entity/:entityType/:entityId')
+  @Get("entity/:entityType/:entityId")
   @ApiOperation({
-    summary: 'Get images by entity',
-    description: 'Get all images for a specific entity (product, category, etc.)',
+    summary: "Get images by entity",
+    description:
+      "Get all images for a specific entity (product, category, etc.)",
   })
   @ApiParam({
-    name: 'entityType',
+    name: "entityType",
     enum: ImageType,
-    description: 'Type of entity',
+    description: "Type of entity",
   })
   @ApiParam({
-    name: 'entityId',
-    type: 'integer',
-    description: 'ID of the entity',
+    name: "entityId",
+    type: "integer",
+    description: "ID of the entity",
   })
   @ApiResponse({
     status: 200,
-    description: 'Images retrieved successfully',
+    description: "Images retrieved successfully",
     example: [
       {
         id: 1,
-        url: 'https://only-he-images.s3.us-east-1.amazonaws.com/products/image1.jpg',
-        alt_text: 'Product main image',
-        caption: 'High quality product image',
+        url: "https://only-he-images.s3.us-east-1.amazonaws.com/products/image1.jpg",
+        alt_text: "Product main image",
+        caption: "High quality product image",
         is_primary: true,
         width: 800,
         height: 600,
@@ -138,128 +143,135 @@ export class ImagesController {
     ],
   })
   async getImagesByEntity(
-    @Param('entityType') entityType: ImageType,
-    @Param('entityId', ParseIntPipe) entityId: number,
+    @Param("entityType") entityType: ImageType,
+    @Param("entityId", ParseIntPipe) entityId: number
   ) {
-    const images = await this.imagesService.findImagesByEntity(entityType, entityId);
+    const images = await this.imagesService.findImagesByEntity(
+      entityType,
+      entityId
+    );
     return this.imagesService.formatImagesForResponse(images);
   }
 
-  @Get('entity/:entityType/:entityId/primary')
+  @Get("entity/:entityType/:entityId/primary")
   @ApiOperation({
-    summary: 'Get primary image by entity',
-    description: 'Get the primary image for a specific entity',
+    summary: "Get primary image by entity",
+    description: "Get the primary image for a specific entity",
   })
   @ApiParam({
-    name: 'entityType',
+    name: "entityType",
     enum: ImageType,
-    description: 'Type of entity',
+    description: "Type of entity",
   })
   @ApiParam({
-    name: 'entityId',
-    type: 'integer',
-    description: 'ID of the entity',
+    name: "entityId",
+    type: "integer",
+    description: "ID of the entity",
   })
   @ApiResponse({
     status: 200,
-    description: 'Primary image retrieved successfully',
+    description: "Primary image retrieved successfully",
     example: {
       id: 1,
-      url: 'https://only-he-images.s3.us-east-1.amazonaws.com/products/image1.jpg',
-      alt_text: 'Product main image',
+      url: "https://only-he-images.s3.us-east-1.amazonaws.com/products/image1.jpg",
+      alt_text: "Product main image",
       is_primary: true,
       width: 800,
       height: 600,
     },
   })
   async getPrimaryImage(
-    @Param('entityType') entityType: ImageType,
-    @Param('entityId', ParseIntPipe) entityId: number,
+    @Param("entityType") entityType: ImageType,
+    @Param("entityId", ParseIntPipe) entityId: number
   ) {
-    const image = await this.imagesService.findPrimaryImage(entityType, entityId);
+    const image = await this.imagesService.findPrimaryImage(
+      entityType,
+      entityId
+    );
     return this.imagesService.formatImageForResponse(image);
   }
 
-  @Get(':id')
+  @Get(":id")
   @ApiOperation({
-    summary: 'Get image by ID',
-    description: 'Get a specific image by its ID',
+    summary: "Get image by ID",
+    description: "Get a specific image by its ID",
   })
   @ApiParam({
-    name: 'id',
-    type: 'integer',
-    description: 'Image ID',
+    name: "id",
+    type: "integer",
+    description: "Image ID",
   })
   @ApiResponse({
     status: 200,
-    description: 'Image retrieved successfully',
+    description: "Image retrieved successfully",
   })
-  @ApiResponse({ status: 404, description: 'Image not found' })
-  async getImageById(@Param('id', ParseIntPipe) id: number) {
+  @ApiResponse({ status: 404, description: "Image not found" })
+  async getImageById(@Param("id", ParseIntPipe) id: number) {
     const image = await this.imagesService.findImageById(id);
     return this.imagesService.formatImageForResponse(image);
   }
 
-  @Put(':id')
+  @Put(":id")
   @ApiOperation({
-    summary: 'Update image metadata',
-    description: 'Update image metadata (alt text, caption, primary status, etc.)',
+    summary: "Update image metadata",
+    description:
+      "Update image metadata (alt text, caption, primary status, etc.)",
   })
   @ApiParam({
-    name: 'id',
-    type: 'integer',
-    description: 'Image ID',
+    name: "id",
+    type: "integer",
+    description: "Image ID",
   })
   @ApiResponse({
     status: 200,
-    description: 'Image updated successfully',
+    description: "Image updated successfully",
   })
-  @ApiResponse({ status: 404, description: 'Image not found' })
+  @ApiResponse({ status: 404, description: "Image not found" })
   async updateImage(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() updateImageDto: UpdateImageDto,
+    @Param("id", ParseIntPipe) id: number,
+    @Body() updateImageDto: UpdateImageDto
   ) {
     const image = await this.imagesService.updateImage(id, updateImageDto);
     return this.imagesService.formatImageForResponse(image);
   }
 
-  @Put(':id/set-primary')
+  @Put(":id/set-primary")
   @ApiOperation({
-    summary: 'Set image as primary',
-    description: 'Set this image as the primary image for its entity',
+    summary: "Set image as primary",
+    description: "Set this image as the primary image for its entity",
   })
   @ApiParam({
-    name: 'id',
-    type: 'integer',
-    description: 'Image ID',
+    name: "id",
+    type: "integer",
+    description: "Image ID",
   })
   @ApiResponse({
     status: 200,
-    description: 'Image set as primary successfully',
+    description: "Image set as primary successfully",
   })
-  @ApiResponse({ status: 404, description: 'Image not found' })
-  async setPrimaryImage(@Param('id', ParseIntPipe) id: number) {
+  @ApiResponse({ status: 404, description: "Image not found" })
+  async setPrimaryImage(@Param("id", ParseIntPipe) id: number) {
     const image = await this.imagesService.setPrimaryImage(id);
     return this.imagesService.formatImageForResponse(image);
   }
 
-  @Delete(':id')
+  @Delete(":id")
   @ApiOperation({
-    summary: 'Delete image',
-    description: 'Delete an image from both S3 and database',
+    summary: "Delete image",
+    description: "Delete an image from both S3 and database",
   })
   @ApiParam({
-    name: 'id',
-    type: 'integer',
-    description: 'Image ID',
+    name: "id",
+    type: "integer",
+    description: "Image ID",
   })
   @ApiResponse({
     status: 200,
-    description: 'Image deleted successfully',
+    description: "Image deleted successfully",
   })
-  @ApiResponse({ status: 404, description: 'Image not found' })
-  async deleteImage(@Param('id', ParseIntPipe) id: number) {
+  @ApiResponse({ status: 404, description: "Image not found" })
+  async deleteImage(@Param("id", ParseIntPipe) id: number) {
     await this.imagesService.deleteImage(id);
-    return { message: 'Image deleted successfully' };
+    return { message: "Image deleted successfully" };
   }
 }
