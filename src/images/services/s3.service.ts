@@ -4,6 +4,8 @@ import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand } fro
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import * as sharp from 'sharp';
 import { v4 as uuidv4 } from 'uuid';
+import { Express } from 'express';
+import 'multer';
 
 export interface UploadResult {
   s3_url: string;

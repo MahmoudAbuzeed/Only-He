@@ -12,6 +12,8 @@ import {
   Query,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { Express } from 'express';
+import 'multer';
 import {
   ApiTags,
   ApiOperation,
@@ -60,22 +62,18 @@ export class ImagesController {
         alt_text: {
           type: 'string',
           description: 'Alternative text for the image',
-          required: false,
         },
         caption: {
           type: 'string',
           description: 'Caption for the image',
-          required: false,
         },
         is_primary: {
           type: 'boolean',
           description: 'Whether this is the primary image for the entity',
-          required: false,
         },
         sort_order: {
           type: 'integer',
           description: 'Sort order for displaying images',
-          required: false,
         },
       },
       required: ['file', 'entity_type', 'entity_id'],

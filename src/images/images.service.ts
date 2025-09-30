@@ -4,6 +4,8 @@ import { S3Service } from './services/s3.service';
 import { Image, ImageType } from './entities/image.entity';
 import { UploadImageDto } from './dto/upload-image.dto';
 import { UpdateImageDto } from './dto/update-image.dto';
+import { Express } from 'express';
+import 'multer';
 
 @Injectable()
 export class ImagesService {
