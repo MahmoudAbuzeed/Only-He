@@ -36,13 +36,27 @@ export class S3Service {
       "only-he-images"
     );
 
-    this.s3Client = new S3Client({
+    // Configure S3 client - use IAM role credentials when available (App Runner)
+    // or explicit credentials for local development
+    const accessKeyId = this.configService.get("AWS_ACCESS_KEY_ID");
+    const secretAccessKey = this.configService.get("AWS_SECRET_ACCESS_KEY");
+
+    const s3Config: any = {
       region: this.region,
-      credentials: {
-        accessKeyId: this.configService.get("AWS_ACCESS_KEY_ID"),
-        secretAccessKey: this.configService.get("AWS_SECRET_ACCESS_KEY"),
-      },
-    });
+    };
+
+    // Only set explicit credentials if they are provided
+    if (accessKeyId && secretAccessKey) {
+      s3Config.credentials = {
+        accessKeyId,
+        secretAccessKey,
+      };
+      this.logger.log("Using explicit AWS credentials for S3");
+    } else {
+      this.logger.log("Using IAM role credentials for S3 (App Runner)");
+    }
+
+    this.s3Client = new S3Client(s3Config);
   }
 
   async uploadImage(

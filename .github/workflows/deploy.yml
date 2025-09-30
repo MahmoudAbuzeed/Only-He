@@ -207,7 +207,7 @@ jobs:
             # Create IAM role for App Runner
             ROLE_NAME="AppRunnerECRAccessRole-$APP_RUNNER_SERVICE"
             
-            # Create trust policy
+            # Create trust policy for ECR access role
             cat > trust-policy.json << EOF
           {
             "Version": "2012-10-17",
@@ -223,20 +223,82 @@ jobs:
           }
           EOF
             
-            # Create role
+            # Create ECR access role
             aws iam create-role \
               --role-name $ROLE_NAME \
               --assume-role-policy-document file://trust-policy.json \
-              --region $AWS_REGION || echo "Role might already exist"
+              --region $AWS_REGION || echo "ECR role might already exist"
             
-            # Attach policy
+            # Attach ECR policy
             aws iam attach-role-policy \
               --role-name $ROLE_NAME \
               --policy-arn arn:aws:iam::aws:policy/service-role/AWSAppRunnerServicePolicyForECRAccess \
-              --region $AWS_REGION || echo "Policy might already be attached"
+              --region $AWS_REGION || echo "ECR policy might already be attached"
             
-            # Get role ARN
+            # Get ECR role ARN
             ROLE_ARN=$(aws iam get-role --role-name $ROLE_NAME --query 'Role.Arn' --output text --region $AWS_REGION)
+
+            # Create instance role for S3 access
+            INSTANCE_ROLE_NAME="AppRunnerInstanceRole-$APP_RUNNER_SERVICE"
+            
+            # Create trust policy for instance role
+            cat > instance-trust-policy.json << EOF
+          {
+            "Version": "2012-10-17",
+            "Statement": [
+              {
+                "Effect": "Allow",
+                "Principal": {
+                  "Service": "tasks.apprunner.amazonaws.com"
+                },
+                "Action": "sts:AssumeRole"
+              }
+            ]
+          }
+          EOF
+            
+            # Create instance role
+            aws iam create-role \
+              --role-name $INSTANCE_ROLE_NAME \
+              --assume-role-policy-document file://instance-trust-policy.json \
+              --region $AWS_REGION || echo "Instance role might already exist"
+            
+            # Create S3 access policy
+            cat > s3-policy.json << EOF
+          {
+            "Version": "2012-10-17",
+            "Statement": [
+              {
+                "Effect": "Allow",
+                "Action": [
+                  "s3:GetObject",
+                  "s3:PutObject",
+                  "s3:DeleteObject",
+                  "s3:ListBucket"
+                ],
+                "Resource": [
+                  "arn:aws:s3:::only-he-images",
+                  "arn:aws:s3:::only-he-images/*"
+                ]
+              }
+            ]
+          }
+          EOF
+            
+            # Create and attach S3 policy
+            S3_POLICY_ARN="arn:aws:iam::$(aws sts get-caller-identity --query Account --output text):policy/OnlyHeS3Access"
+            aws iam create-policy \
+              --policy-name OnlyHeS3Access \
+              --policy-document file://s3-policy.json \
+              --region $AWS_REGION || echo "S3 policy might already exist"
+            
+            aws iam attach-role-policy \
+              --role-name $INSTANCE_ROLE_NAME \
+              --policy-arn $S3_POLICY_ARN \
+              --region $AWS_REGION || echo "S3 policy might already be attached"
+            
+            # Get instance role ARN
+            INSTANCE_ROLE_ARN=$(aws iam get-role --role-name $INSTANCE_ROLE_NAME --query 'Role.Arn' --output text --region $AWS_REGION)
             
             # Create App Runner service
             aws apprunner create-service \
@@ -259,9 +321,7 @@ jobs:
                       "LOG_LEVEL": "info",
                       "BCRYPT_ROUNDS": "10",
                       "AWS_REGION": "us-east-1",
-                      "AWS_S3_BUCKET_NAME": "only-he-images",
-                      "AWS_ACCESS_KEY_ID": "'${{ secrets.AWS_ACCESS_KEY_ID }}'",
-                      "AWS_SECRET_ACCESS_KEY": "'${{ secrets.AWS_SECRET_ACCESS_KEY }}'"
+                      "AWS_S3_BUCKET_NAME": "only-he-images"
                     }
                   },
                   "ImageRepositoryType": "ECR"
@@ -273,7 +333,8 @@ jobs:
               }' \
               --instance-configuration '{
                 "Cpu": "0.25 vCPU",
-                "Memory": "0.5 GB"
+                "Memory": "0.5 GB",
+                "InstanceRoleArn": "'$INSTANCE_ROLE_ARN'"
               }' \
               --health-check-configuration '{
                 "Protocol": "HTTP",
@@ -335,9 +396,7 @@ jobs:
                       "LOG_LEVEL": "info",
                       "BCRYPT_ROUNDS": "10",
                       "AWS_REGION": "us-east-1",
-                      "AWS_S3_BUCKET_NAME": "only-he-images",
-                      "AWS_ACCESS_KEY_ID": "'${{ secrets.AWS_ACCESS_KEY_ID }}'",
-                      "AWS_SECRET_ACCESS_KEY": "'${{ secrets.AWS_SECRET_ACCESS_KEY }}'"
+                      "AWS_S3_BUCKET_NAME": "only-he-images"
                     }
                   },
                   "ImageRepositoryType": "ECR"
