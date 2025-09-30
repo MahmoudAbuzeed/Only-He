@@ -8,7 +8,7 @@ import {
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import * as sharp from "sharp";
-import { v4 as uuidv4 } from "uuid";
+import { randomUUID } from "crypto";
 import { Express } from "express";
 import "multer";
 
@@ -70,7 +70,7 @@ export class S3Service {
     try {
       const fileExtension =
         file.originalname.split(".").pop()?.toLowerCase() || "jpg";
-      const fileName = `${uuidv4()}.${fileExtension}`;
+      const fileName = `${randomUUID()}.${fileExtension}`;
       const s3Key = `${folder}/${fileName}`;
 
       let processedBuffer = file.buffer;
