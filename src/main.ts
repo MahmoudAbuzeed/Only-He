@@ -51,7 +51,7 @@ async function bootstrap() {
     )
     .addServer("http://localhost:7002", "Development server")
     .addServer(
-      "https://z5cpphjngn.us-east-1.awsapprunner.com",
+      "https://amjegh52z4.us-east-1.awsapprunner.com",
       "Production server"
     )
     .build();
