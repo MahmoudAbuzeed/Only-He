@@ -5,12 +5,30 @@ import { Logger } from "shared/logger/logger.service";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, { cors: true });
+  const app = await NestFactory.create(AppModule);
   const logger = app.get(Logger);
 
   // Deployment timestamp: 2025-09-29 - Fixed database connectivity for App Runner
   // RDS is now publicly accessible - should resolve connection timeouts
   console.log("🚀 Only-He API starting up...");
+
+  // Configure CORS properly for production
+  app.enableCors({
+    origin: true, // Allow all origins in development, configure specific origins in production
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"],
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+      "Accept",
+      "X-Requested-With",
+      "Origin",
+      "Access-Control-Request-Method",
+      "Access-Control-Request-Headers",
+    ],
+    exposedHeaders: ["Authorization"],
+    maxAge: 3600,
+  });
 
   // app.useLogger(logger);
   // Set global prefix
