@@ -98,7 +98,7 @@ export class CategoryRepository {
   async findOneWithDetails(id: number): Promise<Category> {
     return await this.categoryRepository.findOne({
       where: { id },
-      relations: ['parent', 'children'],
+      relations: ['parent', 'children', 'products'],
     });
   }
 

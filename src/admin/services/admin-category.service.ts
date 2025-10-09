@@ -63,15 +63,8 @@ export class AdminCategoryService {
       let queryBuilder = this.categoryRepository
         .createQueryBuilder('category')
         .leftJoinAndSelect('category.parent', 'parent')
-        .leftJoinAndSelect('category.children', 'children');
-
-      // Include products count if requested
-      if (include_products_count) {
-        queryBuilder = queryBuilder
-          .leftJoin('category.products', 'products')
-          .addSelect('COUNT(products.id)', 'products_count')
-          .groupBy('category.id, parent.id, children.id');
-      }
+        .leftJoinAndSelect('category.children', 'children')
+        .leftJoinAndSelect('category.products', 'products');
 
       // Apply filters
       if (search) {
