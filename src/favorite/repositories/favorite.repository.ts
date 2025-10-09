@@ -2,7 +2,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Injectable } from '@nestjs/common';
 import { Repository } from 'typeorm';
 
-import { Favorite } from './entities/favorite.entity';
+import { Favorite } from '../entities/favorite.entity';
 
 @Injectable()
 export class FavoriteRepository {

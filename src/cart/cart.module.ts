@@ -5,7 +5,7 @@ import { CartService } from './cart.service';
 import { CartController } from './cart.controller';
 import { Cart } from './entities/cart.entity';
 import { CartItem } from './entities/cart-item.entity';
-import { CartRepository } from './cart.repository';
+import { CartRepository } from './repositories/cart.repository';
 import { ProductModule } from '../product/product.module';
 import { ErrorHandler } from 'shared/errorHandler.service';
 

@@ -2,10 +2,10 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { Injectable } from "@nestjs/common";
 import { Repository } from "typeorm";
 
-import { CreateUserDto } from "./dto/create-user.dto";
-import { UpdateUserDto } from "./dto/update-user.dto";
+import { CreateUserDto } from "../dto/create-user.dto";
+import { UpdateUserDto } from "../dto/update-user.dto";
 
-import { User } from "./entities/user.entity";
+import { User } from "../entities/user.entity";
 
 @Injectable()
 export class UserRepo {
@@ -13,6 +13,19 @@ export class UserRepo {
     @InjectRepository(User)
     private userRepository: Repository<User>
   ) {}
+
+  // Expose repository methods for advanced usage
+  findOne(options: any) {
+    return this.userRepository.findOne(options);
+  }
+
+  createEntity(userData: Partial<User>) {
+    return this.userRepository.create(userData);
+  }
+
+  save(user: User) {
+    return this.userRepository.save(user);
+  }
 
   async create(createUserDto: CreateUserDto) {
     return await this.userRepository.save(createUserDto);
@@ -32,7 +45,7 @@ export class UserRepo {
     return user;
   }
 
-  async findOne(id: number) {
+  async findById(id: number) {
     return await this.userRepository.findOne({ where: { id } });
   }
 

@@ -1,10 +1,10 @@
 import { Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
-import { Package, PackageStatus } from "./entities/package.entity";
-import { PackageProduct } from "./entities/package-product.entity";
-import { CreatePackageDto } from "./dto/create-package.dto";
-import { UpdatePackageDto } from "./dto/update-package.dto";
+import { Package, PackageStatus } from "../entities/package.entity";
+import { PackageProduct } from "../entities/package-product.entity";
+import { CreatePackageDto } from "../dto/create-package.dto";
+import { UpdatePackageDto } from "../dto/update-package.dto";
 
 @Injectable()
 export class PackageRepository {

@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { CategoryRepository } from '../../category/category.repository';
-import { ProductRepository } from '../../product/product.repository';
+import { CategoryRepository } from '../../category/repositories/category.repository';
+import { ProductRepository } from '../../product/repositories/product.repository';
 import { OrderItem } from '../../order/entities/order-item.entity';
 import { ErrorHandler } from 'shared/errorHandler.service';
 import { CreateCategoryDto } from '../../category/dto/create-category.dto';

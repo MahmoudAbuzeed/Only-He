@@ -1,7 +1,7 @@
 import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
-import { UserRepo } from '../../user/user.repository';
+import { UserRepo } from '../../user/repositories/user.repository';
 import { RoleType } from '../../role/entities/role.entity';
 
 @Injectable()

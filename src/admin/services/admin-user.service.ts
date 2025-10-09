@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { UserRepo } from '../../user/user.repository';
-import { RoleRepo } from '../../role/role.repository';
-import { CartRepository } from '../../cart/cart.repository';
-import { FavoriteRepository } from '../../favorite/favorite.repository';
+import { UserRepo } from '../../user/repositories/user.repository';
+import { RoleRepo } from '../../role/repositories/role.repository';
+import { CartRepository } from '../../cart/repositories/cart.repository';
+import { FavoriteRepository } from '../../favorite/repositories/favorite.repository';
 import { OrderService } from '../../order/order.service';
 import { ErrorHandler } from 'shared/errorHandler.service';
 import { CreateUserDto } from '../../user/dto/create-user.dto';

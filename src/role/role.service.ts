@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { CreateRoleDto } from './dto/create-role.dto';
 import { UpdateRoleDto } from './dto/update-role.dto';
-import { RoleRepo } from './role.repository';
+import { RoleRepo } from './repositories/role.repository';
 import { ErrorHandler } from 'shared/errorHandler.service';
 import {
   CREATED_SUCCESSFULLY,

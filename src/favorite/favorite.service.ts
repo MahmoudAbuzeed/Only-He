@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { FavoriteRepository } from './favorite.repository';
-import { ProductRepository } from '../product/product.repository';
+import { FavoriteRepository } from './repositories/favorite.repository';
+import { ProductRepository } from '../product/repositories/product.repository';
 import { ErrorHandler } from 'shared/errorHandler.service';
 import { AddToFavoritesDto } from './dto/add-to-favorites.dto';
 import {

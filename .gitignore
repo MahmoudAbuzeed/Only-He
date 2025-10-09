@@ -418,4 +418,8 @@ coverage/
 
 # Temporary files
 tmp/
-temp/
+temp/firebase-service-account.json
+
+# Firebase credentials - NEVER commit these
+firebase-service-account.json
+firebase-*.json

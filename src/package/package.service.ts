@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import { PackageRepository } from "./package.repository";
+import { PackageRepository } from "./repositories/package.repository";
 import { CreatePackageDto } from "./dto/create-package.dto";
 import { UpdatePackageDto } from "./dto/update-package.dto";
 import { Package, PackageStatus } from "./entities/package.entity";

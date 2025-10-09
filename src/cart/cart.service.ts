@@ -1,24 +1,25 @@
-import { Injectable } from '@nestjs/common';
-import { CartRepository } from './cart.repository';
-import { ProductRepository } from '../product/product.repository';
-import { ErrorHandler } from 'shared/errorHandler.service';
-import { AddToCartDto } from './dto/add-to-cart.dto';
-import { UpdateCartItemDto } from './dto/update-cart-item.dto';
-import { CartItemType } from './entities/cart-item.entity';
-import { CartStatus } from './entities/cart.entity';
+import { Injectable } from "@nestjs/common";
+import { CartRepository } from "./repositories/cart.repository";
+import { ProductRepository } from "../product/repositories/product.repository";
+import { ErrorHandler } from "shared/errorHandler.service";
+import { ResponseUtil } from "../common/utils/response.util";
+import { AddToCartDto } from "./dto/add-to-cart.dto";
+import { UpdateCartItemDto } from "./dto/update-cart-item.dto";
+import { CartItemType } from "./entities/cart-item.entity";
+import { CartStatus } from "./entities/cart.entity";
 
 @Injectable()
 export class CartService {
   constructor(
     private readonly cartRepository: CartRepository,
     private readonly productRepository: ProductRepository,
-    private readonly errorHandler: ErrorHandler,
+    private readonly errorHandler: ErrorHandler
   ) {}
 
   async getOrCreateCart(userId: number) {
     try {
       let cart = await this.cartRepository.findActiveCartByUser(userId);
-      
+
       if (!cart) {
         cart = await this.cartRepository.createCart(userId);
       }
@@ -36,38 +37,42 @@ export class CartService {
       // Validate item exists and is available
       if (addToCartDto.item_type === CartItemType.PRODUCT) {
         if (!addToCartDto.product_id) {
-          throw this.errorHandler.badRequest({ message: 'Product ID is required' });
+          throw this.errorHandler.badRequest({
+            message: "Product ID is required",
+          });
         }
 
-        const product = await this.productRepository.findOne(addToCartDto.product_id);
+        const product = await this.productRepository.findOne(
+          addToCartDto.product_id
+        );
         if (!product) {
-          throw this.errorHandler.notFound({ message: 'Product not found' });
+          throw this.errorHandler.notFound({ message: "Product not found" });
         }
 
         // Check stock availability
         if (product.manage_stock && !product.allow_backorder) {
           if (product.stock_quantity < addToCartDto.quantity) {
-            throw this.errorHandler.badRequest({ 
-              message: `Only ${product.stock_quantity} items available in stock` 
+            throw this.errorHandler.badRequest({
+              message: `Only ${product.stock_quantity} items available in stock`,
             });
           }
         }
 
         // Check if item already exists in cart
         const existingItem = await this.cartRepository.findCartItem(
-          cart.id, 
+          cart.id,
           addToCartDto.product_id
         );
 
         if (existingItem) {
           // Update quantity
           const newQuantity = existingItem.quantity + addToCartDto.quantity;
-          
+
           // Check stock for new quantity
           if (product.manage_stock && !product.allow_backorder) {
             if (product.stock_quantity < newQuantity) {
-              throw this.errorHandler.badRequest({ 
-                message: `Only ${product.stock_quantity} items available in stock` 
+              throw this.errorHandler.badRequest({
+                message: `Only ${product.stock_quantity} items available in stock`,
               });
             }
           }
@@ -97,7 +102,7 @@ export class CartService {
       // Recalculate cart totals
       await this.recalculateCartTotals(cart.id);
 
-      return { message: 'Item added to cart successfully' };
+      return ResponseUtil.successNoData("Item added to cart successfully");
     } catch (error) {
       if (error.status === 400 || error.status === 404) throw error;
       throw this.errorHandler.badRequest(error);
@@ -108,12 +113,12 @@ export class CartService {
     try {
       const cart = await this.cartRepository.findActiveCartByUser(userId);
       if (!cart) {
-        throw this.errorHandler.notFound({ message: 'Cart not found' });
+        throw this.errorHandler.notFound({ message: "Cart not found" });
       }
 
-      const cartItem = cart.items.find(item => item.id === itemId);
+      const cartItem = cart.items.find((item) => item.id === itemId);
       if (!cartItem) {
-        throw this.errorHandler.notFound({ message: 'Cart item not found' });
+        throw this.errorHandler.notFound({ message: "Cart item not found" });
       }
 
       const newQuantity = cartItem.quantity + 1;
@@ -123,8 +128,8 @@ export class CartService {
         const product = cartItem.product;
         if (product.manage_stock && !product.allow_backorder) {
           if (product.stock_quantity < newQuantity) {
-            throw this.errorHandler.badRequest({ 
-              message: `Only ${product.stock_quantity} items available in stock` 
+            throw this.errorHandler.badRequest({
+              message: `Only ${product.stock_quantity} items available in stock`,
             });
           }
         }
@@ -139,10 +144,9 @@ export class CartService {
       // Recalculate cart totals
       await this.recalculateCartTotals(cart.id);
 
-      return { 
-        message: 'Quantity increased successfully',
-        new_quantity: newQuantity 
-      };
+      return ResponseUtil.success("Quantity increased successfully", {
+        new_quantity: newQuantity,
+      });
     } catch (error) {
       if (error.status === 400 || error.status === 404) throw error;
       throw this.errorHandler.badRequest(error);
@@ -153,12 +157,12 @@ export class CartService {
     try {
       const cart = await this.cartRepository.findActiveCartByUser(userId);
       if (!cart) {
-        throw this.errorHandler.notFound({ message: 'Cart not found' });
+        throw this.errorHandler.notFound({ message: "Cart not found" });
       }
 
-      const cartItem = cart.items.find(item => item.id === itemId);
+      const cartItem = cart.items.find((item) => item.id === itemId);
       if (!cartItem) {
-        throw this.errorHandler.notFound({ message: 'Cart item not found' });
+        throw this.errorHandler.notFound({ message: "Cart item not found" });
       }
 
       if (cartItem.quantity <= 1) {
@@ -168,7 +172,7 @@ export class CartService {
 
       const newQuantity = cartItem.quantity - 1;
       const totalPrice = newQuantity * cartItem.unit_price;
-      
+
       await this.cartRepository.updateCartItem(itemId, {
         quantity: newQuantity,
         total_price: totalPrice,
@@ -177,26 +181,29 @@ export class CartService {
       // Recalculate cart totals
       await this.recalculateCartTotals(cart.id);
 
-      return { 
-        message: 'Quantity decreased successfully',
-        new_quantity: newQuantity 
-      };
+      return ResponseUtil.success("Quantity decreased successfully", {
+        new_quantity: newQuantity,
+      });
     } catch (error) {
       if (error.status === 400 || error.status === 404) throw error;
       throw this.errorHandler.badRequest(error);
     }
   }
 
-  async updateCartItem(userId: number, itemId: number, updateDto: UpdateCartItemDto) {
+  async updateCartItem(
+    userId: number,
+    itemId: number,
+    updateDto: UpdateCartItemDto
+  ) {
     try {
       const cart = await this.cartRepository.findActiveCartByUser(userId);
       if (!cart) {
-        throw this.errorHandler.notFound({ message: 'Cart not found' });
+        throw this.errorHandler.notFound({ message: "Cart not found" });
       }
 
-      const cartItem = cart.items.find(item => item.id === itemId);
+      const cartItem = cart.items.find((item) => item.id === itemId);
       if (!cartItem) {
-        throw this.errorHandler.notFound({ message: 'Cart item not found' });
+        throw this.errorHandler.notFound({ message: "Cart item not found" });
       }
 
       // Validate stock if updating quantity
@@ -204,8 +211,8 @@ export class CartService {
         const product = cartItem.product;
         if (product.manage_stock && !product.allow_backorder) {
           if (product.stock_quantity < updateDto.quantity) {
-            throw this.errorHandler.badRequest({ 
-              message: `Only ${product.stock_quantity} items available in stock` 
+            throw this.errorHandler.badRequest({
+              message: `Only ${product.stock_quantity} items available in stock`,
             });
           }
         }
@@ -214,14 +221,15 @@ export class CartService {
         await this.cartRepository.updateCartItem(itemId, {
           quantity: updateDto.quantity,
           total_price: totalPrice,
-          product_options: updateDto.product_options || cartItem.product_options,
+          product_options:
+            updateDto.product_options || cartItem.product_options,
         });
       }
 
       // Recalculate cart totals
       await this.recalculateCartTotals(cart.id);
 
-      return { message: 'Cart item updated successfully' };
+      return ResponseUtil.successNoData("Cart item updated successfully");
     } catch (error) {
       if (error.status === 400 || error.status === 404) throw error;
       throw this.errorHandler.badRequest(error);
@@ -232,12 +240,12 @@ export class CartService {
     try {
       const cart = await this.cartRepository.findActiveCartByUser(userId);
       if (!cart) {
-        throw this.errorHandler.notFound({ message: 'Cart not found' });
+        throw this.errorHandler.notFound({ message: "Cart not found" });
       }
 
-      const cartItem = cart.items.find(item => item.id === itemId);
+      const cartItem = cart.items.find((item) => item.id === itemId);
       if (!cartItem) {
-        throw this.errorHandler.notFound({ message: 'Cart item not found' });
+        throw this.errorHandler.notFound({ message: "Cart item not found" });
       }
 
       await this.cartRepository.removeCartItem(itemId);
@@ -245,7 +253,7 @@ export class CartService {
       // Recalculate cart totals
       await this.recalculateCartTotals(cart.id);
 
-      return { message: 'Item removed from cart successfully' };
+      return ResponseUtil.successNoData("Item removed from cart successfully");
     } catch (error) {
       if (error.status === 404) throw error;
       throw this.errorHandler.badRequest(error);
@@ -257,7 +265,7 @@ export class CartService {
       const cart = await this.cartRepository.findActiveCartByUser(userId);
       if (!cart) {
         // Return empty cart structure
-        return {
+        return ResponseUtil.success("Cart retrieved successfully", {
           id: null,
           items: [],
           subtotal: 0,
@@ -266,15 +274,15 @@ export class CartService {
           discount_amount: 0,
           total: 0,
           item_count: 0,
-        };
+        });
       }
 
       const itemCount = await this.cartRepository.getCartItemCount(cart.id);
 
-      return {
+      return ResponseUtil.success("Cart retrieved successfully", {
         ...cart,
         item_count: itemCount,
-      };
+      });
     } catch (error) {
       throw this.errorHandler.badRequest(error);
     }
@@ -284,12 +292,12 @@ export class CartService {
     try {
       const cart = await this.cartRepository.findActiveCartByUser(userId);
       if (!cart) {
-        throw this.errorHandler.notFound({ message: 'Cart not found' });
+        throw this.errorHandler.notFound({ message: "Cart not found" });
       }
 
       await this.cartRepository.clearCart(cart.id);
 
-      return { message: 'Cart cleared successfully' };
+      return ResponseUtil.successNoData("Cart cleared successfully");
     } catch (error) {
       if (error.status === 404) throw error;
       throw this.errorHandler.badRequest(error);
@@ -314,7 +322,7 @@ export class CartService {
     if (!cart || !cart.items) return;
 
     let subtotal = 0;
-    
+
     for (const item of cart.items) {
       subtotal += item.total_price;
     }
@@ -322,13 +330,14 @@ export class CartService {
     // Calculate tax, shipping, and apply discounts
     const taxRate = 0.08; // 8% tax rate - should be configurable based on location
     const taxAmount = subtotal * taxRate;
-    
+
     // Calculate shipping based on cart value and items
     let shippingAmount = 0;
-    if (subtotal < 50) { // Free shipping over $50
+    if (subtotal < 50) {
+      // Free shipping over $50
       shippingAmount = 9.99; // Standard shipping rate
     }
-    
+
     const discountAmount = cart.discount_amount || 0;
 
     const total = subtotal + taxAmount + shippingAmount - discountAmount;

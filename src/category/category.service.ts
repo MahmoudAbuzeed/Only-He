@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
-import { CategoryRepository } from './category.repository';
+import { CategoryRepository } from './repositories/category.repository';
 import { ErrorHandler } from 'shared/errorHandler.service';
 import {
   CREATED_SUCCESSFULLY,

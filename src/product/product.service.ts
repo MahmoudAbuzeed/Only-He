@@ -4,11 +4,12 @@ import { Repository } from "typeorm";
 import { CreateProductDto } from "./dto/create-product.dto";
 import { UpdateProductDto } from "./dto/update-product.dto";
 import { ProductFilterDto } from "./dto/product-filter.dto";
-import { ProductRepository } from "./product.repository";
-import { CategoryRepository } from "../category/category.repository";
+import { ProductRepository } from "./repositories/product.repository";
+import { CategoryRepository } from "../category/repositories/category.repository";
 import { OrderItem } from "../order/entities/order-item.entity";
 import { CartItem } from "../cart/entities/cart-item.entity";
 import { ErrorHandler } from "shared/errorHandler.service";
+import { ResponseUtil } from "../common/utils/response.util";
 import { ImagesService } from "../images/images.service";
 import { ImageType } from "../images/entities/image.entity";
 import {

@@ -4,7 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { FavoriteService } from './favorite.service';
 import { FavoriteController } from './favorite.controller';
 import { Favorite } from './entities/favorite.entity';
-import { FavoriteRepository } from './favorite.repository';
+import { FavoriteRepository } from './repositories/favorite.repository';
 import { ProductModule } from '../product/product.module';
 import { ErrorHandler } from 'shared/errorHandler.service';
 

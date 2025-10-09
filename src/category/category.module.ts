@@ -4,7 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { CategoryService } from './category.service';
 import { CategoryController } from './category.controller';
 import { Category } from './entities/category.entity';
-import { CategoryRepository } from './category.repository';
+import { CategoryRepository } from './repositories/category.repository';
 import { ErrorHandler } from 'shared/errorHandler.service';
 
 @Module({

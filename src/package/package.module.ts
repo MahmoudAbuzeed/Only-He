@@ -2,7 +2,7 @@ import { Module } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { PackageService } from "./package.service";
 import { PackageController } from "./package.controller";
-import { PackageRepository } from "./package.repository";
+import { PackageRepository } from "./repositories/package.repository";
 import { Package } from "./entities/package.entity";
 import { PackageProduct } from "./entities/package-product.entity";
 import { ErrorHandler } from "shared/errorHandler.service";

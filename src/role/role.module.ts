@@ -4,7 +4,7 @@ import { TypeOrmModule } from "@nestjs/typeorm";
 import { RoleService } from "./role.service";
 import { RoleController } from "./role.controller";
 import { Role } from "./entities/role.entity";
-import { RoleRepo } from "./role.repository";
+import { RoleRepo } from "./repositories/role.repository";
 import { ErrorHandler } from "shared/errorHandler.service";
 
 @Module({

@@ -1,7 +1,7 @@
 import { NestFactory } from "@nestjs/core";
 import { AppModule } from "../app.module";
-import { UserRepo } from "../user/user.repository";
-import { RoleRepo } from "../role/role.repository";
+import { UserRepo } from "../user/repositories/user.repository";
+import { RoleRepo } from "../role/repositories/role.repository";
 import { RoleType } from "../role/entities/role.entity";
 import { DataSource } from "typeorm";
 import * as bcrypt from "bcrypt";

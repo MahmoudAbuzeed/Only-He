@@ -23,14 +23,17 @@ export class User {
   @Column({ length: 40 })
   user_name: string;
 
-  @Column({ unique: true })
+  @Column({ unique: true, nullable: true })
   email: string;
 
   @Column({ unique: true, nullable: true })
   phone: string;
 
-  @Column()
+  @Column({ nullable: true })
   password: string;
+
+  @Column({ default: false })
+  phone_verified: boolean;
 
   @Column({ default: true })
   is_active: boolean;

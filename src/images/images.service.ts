@@ -3,7 +3,7 @@ import {
   NotFoundException,
   BadRequestException,
 } from "@nestjs/common";
-import { ImagesRepository } from "./images.repository";
+import { ImagesRepository } from "./repositories/images.repository";
 import { S3Service } from "./services/s3.service";
 import { Image, ImageType } from "./entities/image.entity";
 import { UploadImageDto } from "./dto/upload-image.dto";

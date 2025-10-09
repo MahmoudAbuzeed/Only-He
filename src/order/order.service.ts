@@ -1,14 +1,14 @@
-import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Not } from 'typeorm';
+import { Injectable } from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository, Not } from "typeorm";
 
-import { Order, OrderStatus, PaymentStatus } from './entities/order.entity';
-import { OrderItem, OrderItemType } from './entities/order-item.entity';
-import { CreateOrderDto } from './dto/create-order.dto';
-import { CartService } from '../cart/cart.service';
-import { ProductService } from '../product/product.service';
-import { ErrorHandler } from 'shared/errorHandler.service';
-import { CREATED_SUCCESSFULLY } from 'messages';
+import { Order, OrderStatus, PaymentStatus } from "./entities/order.entity";
+import { OrderItem, OrderItemType } from "./entities/order-item.entity";
+import { CreateOrderDto } from "./dto/create-order.dto";
+import { CartService } from "../cart/cart.service";
+import { ProductService } from "../product/product.service";
+import { ErrorHandler } from "shared/errorHandler.service";
+import { CREATED_SUCCESSFULLY } from "messages";
 
 @Injectable()
 export class OrderService {
@@ -19,15 +19,16 @@ export class OrderService {
     private orderItemRepository: Repository<OrderItem>,
     private readonly cartService: CartService,
     private readonly productService: ProductService,
-    private readonly errorHandler: ErrorHandler,
+    private readonly errorHandler: ErrorHandler
   ) {}
 
   async createOrder(userId: number, createOrderDto: CreateOrderDto) {
     try {
       // Get user's active cart
-      const cart = await this.cartService.getCart(userId);
+      const cartResponse = await this.cartService.getCart(userId);
+      const cart = cartResponse.data; // Extract cart data from response
       if (!cart.items || cart.items.length === 0) {
-        throw this.errorHandler.badRequest({ message: 'Cart is empty' });
+        throw this.errorHandler.badRequest({ message: "Cart is empty" });
       }
 
       // Validate stock availability for all items
@@ -39,7 +40,7 @@ export class OrderService {
           );
           if (!hasStock) {
             throw this.errorHandler.badRequest({
-              message: `Insufficient stock for product: ${cartItem.product.name}`
+              message: `Insufficient stock for product: ${cartItem.product.name}`,
             });
           }
         }
@@ -62,7 +63,8 @@ export class OrderService {
         coupon_code: createOrderDto.coupon_code || (cart as any).coupon_code,
         applied_offers: (cart as any).applied_offers || [],
         shipping_address: createOrderDto.shipping_address,
-        billing_address: createOrderDto.billing_address || createOrderDto.shipping_address,
+        billing_address:
+          createOrderDto.billing_address || createOrderDto.shipping_address,
         shipping_method: createOrderDto.shipping_method,
         notes: createOrderDto.notes,
       });
@@ -79,11 +81,14 @@ export class OrderService {
           quantity: cartItem.quantity,
           unit_price: cartItem.unit_price,
           total_price: cartItem.total_price,
-          item_name: cartItem.product?.name || cartItem.package?.name || 'Unknown Item',
+          item_name:
+            cartItem.product?.name || cartItem.package?.name || "Unknown Item",
           item_sku: cartItem.product?.sku || cartItem.package?.sku,
           item_details: {
-            description: cartItem.product?.description || cartItem.package?.description,
-            image_url: cartItem.product?.images?.[0] || cartItem.package?.image_url,
+            description:
+              cartItem.product?.description || cartItem.package?.description,
+            image_url:
+              cartItem.product?.images?.[0] || cartItem.package?.image_url,
             attributes: cartItem.product?.attributes,
           },
           product_options: cartItem.product_options,
@@ -94,7 +99,10 @@ export class OrderService {
 
         // Reserve stock for products
         if (cartItem.product) {
-          await this.productService.reserveStock(cartItem.product.id, cartItem.quantity);
+          await this.productService.reserveStock(
+            cartItem.product.id,
+            cartItem.quantity
+          );
         }
       }
 
@@ -119,8 +127,8 @@ export class OrderService {
     try {
       const orders = await this.orderRepository.find({
         where: { user_id: userId },
-        relations: ['items', 'items.product', 'items.package'],
-        order: { created_at: 'DESC' },
+        relations: ["items", "items.product", "items.package"],
+        order: { created_at: "DESC" },
       });
 
       return orders;
@@ -133,11 +141,11 @@ export class OrderService {
     try {
       const order = await this.orderRepository.findOne({
         where: { id: orderId, user_id: userId },
-        relations: ['items', 'items.product', 'items.package', 'payments'],
+        relations: ["items", "items.product", "items.package", "payments"],
       });
 
       if (!order) {
-        throw this.errorHandler.notFound({ message: 'Order not found' });
+        throw this.errorHandler.notFound({ message: "Order not found" });
       }
 
       return order;
@@ -151,9 +159,9 @@ export class OrderService {
     try {
       const result = await this.orderRepository.update(orderId, { status });
       if (result.affected === 0) {
-        throw this.errorHandler.notFound({ message: 'Order not found' });
+        throw this.errorHandler.notFound({ message: "Order not found" });
       }
-      return { message: 'Order status updated successfully' };
+      return { message: "Order status updated successfully" };
     } catch (error) {
       if (error.status === 404) throw error;
       throw this.errorHandler.badRequest(error);
@@ -163,7 +171,7 @@ export class OrderService {
   private async generateOrderNumber(): Promise<string> {
     const year = new Date().getFullYear();
     const count = await this.orderRepository.count();
-    const orderNumber = `ORD-${year}-${String(count + 1).padStart(6, '0')}`;
+    const orderNumber = `ORD-${year}-${String(count + 1).padStart(6, "0")}`;
     return orderNumber;
   }
 
@@ -178,11 +186,11 @@ export class OrderService {
 
   async getTotalSpentByUser(userId: number): Promise<number> {
     try {
-      const result = await this.orderRepository.sum('total_amount', {
+      const result = await this.orderRepository.sum("total_amount", {
         user_id: userId,
         status: Not(OrderStatus.CANCELLED),
       });
-      
+
       return result || 0;
     } catch (error) {
       return 0;
@@ -193,10 +201,10 @@ export class OrderService {
     try {
       const order = await this.orderRepository.findOne({
         where: { user_id: userId },
-        order: { created_at: 'DESC' },
-        select: ['created_at'],
+        order: { created_at: "DESC" },
+        select: ["created_at"],
       });
-      
+
       return order ? order.created_at : null;
     } catch (error) {
       return null;
