@@ -262,11 +262,15 @@ export class CartService {
 
   async getCart(userId: number) {
     try {
-      const cart = await this.cartRepository.findActiveCartByUser(userId);
+      // Auto-create cart if it doesn't exist (e-commerce best practice)
+      let cart = await this.cartRepository.findActiveCartByUser(userId);
+      
       if (!cart) {
-        // Return empty cart structure
+        cart = await this.cartRepository.createCart(userId);
+        // Return newly created empty cart
         return ResponseUtil.success("Cart retrieved successfully", {
-          id: null,
+          id: cart.id,
+          user_id: cart.user_id,
           items: [],
           subtotal: 0,
           tax_amount: 0,
@@ -274,16 +278,103 @@ export class CartService {
           discount_amount: 0,
           total: 0,
           item_count: 0,
+          status: cart.status,
+          created_at: cart.created_at,
         });
       }
 
       const itemCount = await this.cartRepository.getCartItemCount(cart.id);
 
       return ResponseUtil.success("Cart retrieved successfully", {
-        ...cart,
+        id: cart.id,
+        user_id: cart.user_id,
+        items: cart.items || [],
+        subtotal: cart.subtotal || 0,
+        tax_amount: cart.tax_amount || 0,
+        shipping_amount: cart.shipping_amount || 0,
+        discount_amount: cart.discount_amount || 0,
+        total: cart.total || 0,
         item_count: itemCount,
+        coupon_code: cart.coupon_code || null,
+        status: cart.status,
+        created_at: cart.created_at,
+        updated_at: cart.updated_at,
       });
     } catch (error) {
+      throw this.errorHandler.badRequest(error);
+    }
+  }
+
+  async applyCoupon(userId: number, couponCode: string) {
+    try {
+      const cart = await this.cartRepository.findActiveCartByUser(userId);
+      if (!cart) {
+        throw this.errorHandler.notFound({ message: "Cart not found" });
+      }
+
+      if (!cart.items || cart.items.length === 0) {
+        throw this.errorHandler.badRequest({
+          message: "Cannot apply coupon to empty cart",
+        });
+      }
+
+      // TODO: Integrate with coupon/discount service to validate coupon
+      // For now, using a simple mock validation
+      const validCoupons: Record<string, number> = {
+        SAVE10: 10, // $10 off
+        SAVE20: 20, // $20 off
+        PERCENT10: 0.1, // 10% off
+        PERCENT20: 0.2, // 20% off
+      };
+
+      const coupon = validCoupons[couponCode.toUpperCase()];
+      if (!coupon) {
+        throw this.errorHandler.badRequest({
+          message: "Invalid coupon code",
+        });
+      }
+
+      // Calculate discount
+      let discountAmount = 0;
+      if (coupon < 1) {
+        // Percentage discount
+        discountAmount = cart.subtotal * coupon;
+      } else {
+        // Fixed amount discount
+        discountAmount = coupon;
+      }
+
+      // Ensure discount doesn't exceed subtotal
+      discountAmount = Math.min(discountAmount, cart.subtotal);
+
+      await this.cartRepository.applyCoupon(cart.id, couponCode, discountAmount);
+
+      // Recalculate totals with new discount
+      await this.recalculateCartTotals(cart.id);
+
+      return ResponseUtil.success("Coupon applied successfully", {
+        coupon_code: couponCode,
+        discount_amount: discountAmount,
+      });
+    } catch (error) {
+      if (error.status === 400 || error.status === 404) throw error;
+      throw this.errorHandler.badRequest(error);
+    }
+  }
+
+  async removeCoupon(userId: number) {
+    try {
+      const cart = await this.cartRepository.findActiveCartByUser(userId);
+      if (!cart) {
+        throw this.errorHandler.notFound({ message: "Cart not found" });
+      }
+
+      await this.cartRepository.applyCoupon(cart.id, null, 0);
+      await this.recalculateCartTotals(cart.id);
+
+      return ResponseUtil.successNoData("Coupon removed successfully");
+    } catch (error) {
+      if (error.status === 404) throw error;
       throw this.errorHandler.badRequest(error);
     }
   }
@@ -321,33 +412,47 @@ export class CartService {
     const cart = await this.cartRepository.findCartById(cartId);
     if (!cart || !cart.items) return;
 
+    // Calculate subtotal from all items
     let subtotal = 0;
-
     for (const item of cart.items) {
       subtotal += item.total_price;
     }
 
-    // Calculate tax, shipping, and apply discounts
-    const taxRate = 0.08; // 8% tax rate - should be configurable based on location
-    const taxAmount = subtotal * taxRate;
-
-    // Calculate shipping based on cart value and items
-    let shippingAmount = 0;
-    if (subtotal < 50) {
-      // Free shipping over $50
-      shippingAmount = 9.99; // Standard shipping rate
-    }
-
+    // Get discount amount (from coupon or manual discount)
     const discountAmount = cart.discount_amount || 0;
 
-    const total = subtotal + taxAmount + shippingAmount - discountAmount;
+    // Calculate subtotal after discount (before tax)
+    const subtotalAfterDiscount = Math.max(0, subtotal - discountAmount);
+
+    // Calculate tax (applied after discount)
+    // TODO: Make tax rate configurable per region/country
+    const taxRate = parseFloat(process.env.TAX_RATE || "0.08"); // Default 8%
+    const taxAmount = subtotalAfterDiscount * taxRate;
+
+    // Calculate shipping based on cart value
+    // TODO: Make shipping rules configurable
+    let shippingAmount = 0;
+    const freeShippingThreshold = parseFloat(
+      process.env.FREE_SHIPPING_THRESHOLD || "50"
+    );
+    const standardShippingRate = parseFloat(
+      process.env.STANDARD_SHIPPING_RATE || "9.99"
+    );
+
+    if (subtotalAfterDiscount < freeShippingThreshold) {
+      shippingAmount = standardShippingRate;
+    }
+    // Free shipping if subtotal (after discount) >= threshold
+
+    // Calculate final total
+    const total = subtotalAfterDiscount + taxAmount + shippingAmount;
 
     await this.cartRepository.updateCartTotals(cartId, {
       subtotal,
-      tax_amount: taxAmount,
-      shipping_amount: shippingAmount,
-      discount_amount: discountAmount,
-      total,
+      tax_amount: parseFloat(taxAmount.toFixed(2)),
+      shipping_amount: parseFloat(shippingAmount.toFixed(2)),
+      discount_amount: parseFloat(discountAmount.toFixed(2)),
+      total: parseFloat(total.toFixed(2)),
     });
   }
 }

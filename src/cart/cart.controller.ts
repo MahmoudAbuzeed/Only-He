@@ -23,33 +23,42 @@ export class CartController {
   @Get()
   @ApiOperation({ 
     summary: 'Get user cart',
-    description: 'Retrieve the current user\'s shopping cart with all items and totals'
+    description: 'Retrieve the current user\'s shopping cart with all items and totals. If no cart exists, a new empty cart is automatically created.'
   })
   @ApiResponse({ 
     status: 200, 
     description: 'Cart retrieved successfully',
     example: {
-      id: 1,
-      items: [
-        {
-          id: 1,
-          product: {
-            id: 123,
-            name: 'iPhone 15 Pro',
-            price: 999.99,
-            images: ['image1.jpg']
-          },
-          quantity: 2,
-          unit_price: 999.99,
-          total_price: 1999.98
-        }
-      ],
-      subtotal: 1999.98,
-      tax_amount: 0,
-      shipping_amount: 0,
-      discount_amount: 0,
-      total: 1999.98,
-      item_count: 2
+      success: true,
+      message: 'Cart retrieved successfully',
+      data: {
+        id: 1,
+        user_id: 1,
+        items: [
+          {
+            id: 1,
+            product: {
+              id: 123,
+              name: 'iPhone 15 Pro',
+              price: 999.99,
+              images: ['image1.jpg']
+            },
+            quantity: 2,
+            unit_price: 999.99,
+            total_price: 1999.98
+          }
+        ],
+        subtotal: 1999.98,
+        tax_amount: 159.99,
+        shipping_amount: 0,
+        discount_amount: 0,
+        total: 2159.97,
+        item_count: 2,
+        coupon_code: null,
+        status: 'active',
+        created_at: '2024-01-15T10:00:00.000Z',
+        updated_at: '2024-01-15T10:30:00.000Z'
+      }
     }
   })
   getCart(@Request() req) {
@@ -62,7 +71,7 @@ export class CartController {
   @Get('count')
   @ApiOperation({ 
     summary: 'Get cart item count',
-    description: 'Get the total number of items in the user\'s cart'
+    description: 'Get the total number of items in the user\'s cart (returns 0 if no cart exists)'
   })
   @ApiResponse({ 
     status: 200, 
@@ -77,13 +86,16 @@ export class CartController {
   @Post('add')
   @ApiOperation({ 
     summary: 'Add item to cart',
-    description: 'Add a product or package to the user\'s shopping cart'
+    description: 'Add a product or package to the user\'s shopping cart. Cart is automatically created if it doesn\'t exist.'
   })
   @ApiBody({ type: AddToCartDto })
   @ApiResponse({ 
     status: 201, 
     description: 'Item added to cart successfully',
-    example: { message: 'Item added to cart successfully' }
+    example: { 
+      success: true,
+      message: 'Item added to cart successfully'
+    }
   })
   @ApiResponse({ status: 400, description: 'Bad request - invalid item or insufficient stock' })
   @ApiResponse({ status: 404, description: 'Product not found' })
@@ -102,9 +114,13 @@ export class CartController {
   @ApiResponse({ 
     status: 200, 
     description: 'Cart item updated successfully',
-    example: { message: 'Cart item updated successfully' }
+    example: { 
+      success: true,
+      message: 'Cart item updated successfully'
+    }
   })
   @ApiResponse({ status: 404, description: 'Cart item not found' })
+  @ApiResponse({ status: 400, description: 'Insufficient stock' })
   updateCartItem(
     @Request() req,
     @Param('itemId', ParseIntPipe) itemId: number,
@@ -117,15 +133,18 @@ export class CartController {
   @Patch('item/:itemId/increase')
   @ApiOperation({ 
     summary: 'Increase item quantity',
-    description: 'Increase cart item quantity by 1'
+    description: 'Increase cart item quantity by 1. Cart totals are automatically recalculated.'
   })
   @ApiParam({ name: 'itemId', description: 'Cart item ID', example: 1 })
   @ApiResponse({ 
     status: 200, 
     description: 'Quantity increased successfully',
     example: { 
+      success: true,
       message: 'Quantity increased successfully',
-      new_quantity: 3
+      data: {
+        new_quantity: 3
+      }
     }
   })
   @ApiResponse({ status: 404, description: 'Cart item not found' })
@@ -141,15 +160,18 @@ export class CartController {
   @Patch('item/:itemId/decrease')
   @ApiOperation({ 
     summary: 'Decrease item quantity',
-    description: 'Decrease cart item quantity by 1. If quantity becomes 0, item is removed.'
+    description: 'Decrease cart item quantity by 1. If quantity becomes 0, item is automatically removed from cart.'
   })
   @ApiParam({ name: 'itemId', description: 'Cart item ID', example: 1 })
   @ApiResponse({ 
     status: 200, 
     description: 'Quantity decreased successfully',
     example: { 
+      success: true,
       message: 'Quantity decreased successfully',
-      new_quantity: 1
+      data: {
+        new_quantity: 1
+      }
     }
   })
   @ApiResponse({ status: 404, description: 'Cart item not found' })
@@ -164,13 +186,16 @@ export class CartController {
   @Delete('item/:itemId')
   @ApiOperation({ 
     summary: 'Remove item from cart',
-    description: 'Remove a specific item from the shopping cart'
+    description: 'Remove a specific item from the shopping cart. Cart totals are automatically recalculated.'
   })
   @ApiParam({ name: 'itemId', description: 'Cart item ID', example: 1 })
   @ApiResponse({ 
     status: 200, 
     description: 'Item removed successfully',
-    example: { message: 'Item removed from cart successfully' }
+    example: { 
+      success: true,
+      message: 'Item removed from cart successfully'
+    }
   })
   @ApiResponse({ status: 404, description: 'Cart item not found' })
   removeFromCart(
@@ -181,6 +206,62 @@ export class CartController {
     return this.cartService.removeFromCart(userId, itemId);
   }
 
+  @Post('coupon/apply')
+  @ApiOperation({ 
+    summary: 'Apply coupon to cart',
+    description: 'Apply a discount coupon code to the shopping cart. Valid codes: SAVE10 ($10 off), SAVE20 ($20 off), PERCENT10 (10% off), PERCENT20 (20% off)'
+  })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        coupon_code: {
+          type: 'string',
+          example: 'SAVE10',
+          description: 'Coupon code to apply'
+        }
+      },
+      required: ['coupon_code']
+    }
+  })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Coupon applied successfully',
+    example: { 
+      success: true,
+      message: 'Coupon applied successfully',
+      data: {
+        coupon_code: 'SAVE10',
+        discount_amount: 10.00
+      }
+    }
+  })
+  @ApiResponse({ status: 400, description: 'Invalid coupon code or empty cart' })
+  @ApiResponse({ status: 404, description: 'Cart not found' })
+  applyCoupon(@Request() req, @Body('coupon_code') couponCode: string) {
+    const userId = req.user?.id || 1;
+    return this.cartService.applyCoupon(userId, couponCode);
+  }
+
+  @Delete('coupon')
+  @ApiOperation({ 
+    summary: 'Remove coupon from cart',
+    description: 'Remove the applied coupon code from the shopping cart'
+  })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Coupon removed successfully',
+    example: { 
+      success: true,
+      message: 'Coupon removed successfully'
+    }
+  })
+  @ApiResponse({ status: 404, description: 'Cart not found' })
+  removeCoupon(@Request() req) {
+    const userId = req.user?.id || 1;
+    return this.cartService.removeCoupon(userId);
+  }
+
   @Delete('clear')
   @ApiOperation({ 
     summary: 'Clear cart',
@@ -189,7 +270,10 @@ export class CartController {
   @ApiResponse({ 
     status: 200, 
     description: 'Cart cleared successfully',
-    example: { message: 'Cart cleared successfully' }
+    example: { 
+      success: true,
+      message: 'Cart cleared successfully'
+    }
   })
   @ApiResponse({ status: 404, description: 'Cart not found' })
   clearCart(@Request() req) {
