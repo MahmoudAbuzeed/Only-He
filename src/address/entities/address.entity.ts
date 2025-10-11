@@ -6,8 +6,8 @@ import {
   UpdateDateColumn,
   ManyToOne,
   JoinColumn,
-} from 'typeorm';
-import { User } from 'src/user/entities/user.entity';
+} from "typeorm";
+import { User } from "src/user/entities/user.entity";
 
 @Entity()
 export class Address {
@@ -17,8 +17,8 @@ export class Address {
   @Column()
   user_id: number;
 
-  @ManyToOne(() => User, (user) => user.addresses, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'user_id' })
+  @ManyToOne(() => User, (user) => user.addresses, { onDelete: "CASCADE" })
+  @JoinColumn({ name: "user_id" })
   user: User;
 
   @Column({ length: 100 })
@@ -66,4 +66,3 @@ export class Address {
   @UpdateDateColumn()
   updated_at: Date;
 }
-
