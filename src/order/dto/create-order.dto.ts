@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsOptional, IsObject, ValidateNested } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsObject, ValidateNested, IsNumber, IsBoolean } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
@@ -55,13 +55,32 @@ export class AddressDto {
 }
 
 export class CreateOrderDto {
-  @ApiProperty({ 
-    description: 'Shipping address',
+  // Option 1: Use saved address ID (recommended)
+  @ApiPropertyOptional({ 
+    example: 5, 
+    description: 'ID of saved shipping address (use this OR shipping_address, not both)'
+  })
+  @IsNumber()
+  @IsOptional()
+  shipping_address_id?: number;
+
+  @ApiPropertyOptional({ 
+    example: 5, 
+    description: 'ID of saved billing address (use this OR billing_address, not both)'
+  })
+  @IsNumber()
+  @IsOptional()
+  billing_address_id?: number;
+
+  // Option 2: Provide new address (will be used for this order)
+  @ApiPropertyOptional({ 
+    description: 'Shipping address (use this if not using shipping_address_id)',
     type: AddressDto
   })
   @ValidateNested()
   @Type(() => AddressDto)
-  shipping_address: AddressDto;
+  @IsOptional()
+  shipping_address?: AddressDto;
 
   @ApiPropertyOptional({ 
     description: 'Billing address (optional, defaults to shipping address if not provided)',
@@ -71,6 +90,24 @@ export class CreateOrderDto {
   @Type(() => AddressDto)
   @IsOptional()
   billing_address?: AddressDto;
+
+  // Option 3: Save the new address for future use
+  @ApiPropertyOptional({ 
+    example: true, 
+    description: 'Save shipping address to your account for future use',
+    default: false
+  })
+  @IsBoolean()
+  @IsOptional()
+  save_shipping_address?: boolean;
+
+  @ApiPropertyOptional({ 
+    example: 'Home', 
+    description: 'Label for saved address (e.g., "Home", "Work")'
+  })
+  @IsString()
+  @IsOptional()
+  address_label?: string;
 
   @ApiPropertyOptional({ 
     example: 'standard', 

@@ -7,6 +7,7 @@ import { OrderItem, OrderItemType } from "./entities/order-item.entity";
 import { CreateOrderDto } from "./dto/create-order.dto";
 import { CartService } from "../cart/cart.service";
 import { ProductService } from "../product/product.service";
+import { AddressService } from "../address/address.service";
 import { ErrorHandler } from "shared/errorHandler.service";
 import { CREATED_SUCCESSFULLY } from "messages";
 
@@ -19,6 +20,7 @@ export class OrderService {
     private orderItemRepository: Repository<OrderItem>,
     private readonly cartService: CartService,
     private readonly productService: ProductService,
+    private readonly addressService: AddressService,
     private readonly errorHandler: ErrorHandler
   ) {}
 
@@ -46,6 +48,88 @@ export class OrderService {
         }
       }
 
+      // Resolve shipping address
+      let shippingAddress;
+      if (createOrderDto.shipping_address_id) {
+        // Use saved address
+        const savedAddress = await this.addressService.findOneRaw(
+          userId,
+          createOrderDto.shipping_address_id
+        );
+        shippingAddress = {
+          first_name: savedAddress.first_name,
+          last_name: savedAddress.last_name,
+          company: savedAddress.company,
+          address_line_1: savedAddress.address_line_1,
+          address_line_2: savedAddress.address_line_2,
+          city: savedAddress.city,
+          state: savedAddress.state,
+          postal_code: savedAddress.postal_code,
+          country: savedAddress.country,
+          phone: savedAddress.phone,
+        };
+      } else if (createOrderDto.shipping_address) {
+        // Use provided address
+        shippingAddress = createOrderDto.shipping_address;
+
+        // Save address if requested
+        if (createOrderDto.save_shipping_address) {
+          await this.addressService.create(userId, {
+            label: createOrderDto.address_label || "Shipping Address",
+            ...createOrderDto.shipping_address,
+          });
+        }
+      } else {
+        // Try to use default shipping address
+        const defaultAddress = await this.addressService.getDefaultShipping(userId);
+        if (defaultAddress) {
+          shippingAddress = {
+            first_name: defaultAddress.first_name,
+            last_name: defaultAddress.last_name,
+            company: defaultAddress.company,
+            address_line_1: defaultAddress.address_line_1,
+            address_line_2: defaultAddress.address_line_2,
+            city: defaultAddress.city,
+            state: defaultAddress.state,
+            postal_code: defaultAddress.postal_code,
+            country: defaultAddress.country,
+            phone: defaultAddress.phone,
+          };
+        } else {
+          throw this.errorHandler.badRequest({
+            message: "Shipping address is required",
+          });
+        }
+      }
+
+      // Resolve billing address
+      let billingAddress;
+      if (createOrderDto.billing_address_id) {
+        // Use saved address
+        const savedAddress = await this.addressService.findOneRaw(
+          userId,
+          createOrderDto.billing_address_id
+        );
+        billingAddress = {
+          first_name: savedAddress.first_name,
+          last_name: savedAddress.last_name,
+          company: savedAddress.company,
+          address_line_1: savedAddress.address_line_1,
+          address_line_2: savedAddress.address_line_2,
+          city: savedAddress.city,
+          state: savedAddress.state,
+          postal_code: savedAddress.postal_code,
+          country: savedAddress.country,
+          phone: savedAddress.phone,
+        };
+      } else if (createOrderDto.billing_address) {
+        // Use provided billing address
+        billingAddress = createOrderDto.billing_address;
+      } else {
+        // Default to shipping address
+        billingAddress = shippingAddress;
+      }
+
       // Generate order number
       const orderNumber = await this.generateOrderNumber();
 
@@ -62,9 +146,8 @@ export class OrderService {
         total_amount: cart.total,
         coupon_code: createOrderDto.coupon_code || (cart as any).coupon_code,
         applied_offers: (cart as any).applied_offers || [],
-        shipping_address: createOrderDto.shipping_address,
-        billing_address:
-          createOrderDto.billing_address || createOrderDto.shipping_address,
+        shipping_address: shippingAddress,
+        billing_address: billingAddress,
         shipping_method: createOrderDto.shipping_method,
         notes: createOrderDto.notes,
       });

@@ -12,6 +12,7 @@ import { OrderItem } from "./order/entities/order-item.entity";
 import { Payment } from "./payment/entities/payment.entity";
 import { Favorite } from "./favorite/entities/favorite.entity";
 import { Image } from "./images/entities/image.entity";
+import { Address } from "./address/entities/address.entity";
 
 export const entities = [
   User,
@@ -28,4 +29,5 @@ export const entities = [
   Payment,
   Favorite,
   Image,
+  Address,
 ];

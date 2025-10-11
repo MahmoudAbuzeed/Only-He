@@ -7,6 +7,7 @@ import { Order } from './entities/order.entity';
 import { OrderItem } from './entities/order-item.entity';
 import { CartModule } from '../cart/cart.module';
 import { ProductModule } from '../product/product.module';
+import { AddressModule } from '../address/address.module';
 import { ErrorHandler } from 'shared/errorHandler.service';
 
 @Module({
@@ -14,6 +15,7 @@ import { ErrorHandler } from 'shared/errorHandler.service';
     TypeOrmModule.forFeature([Order, OrderItem]),
     CartModule,
     ProductModule,
+    AddressModule,
   ],
   controllers: [OrderController],
   providers: [OrderService, ErrorHandler],
