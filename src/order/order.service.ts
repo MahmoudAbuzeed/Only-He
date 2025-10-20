@@ -9,6 +9,7 @@ import { CartService } from "../cart/cart.service";
 import { ProductService } from "../product/product.service";
 import { AddressService } from "../address/address.service";
 import { ErrorHandler } from "shared/errorHandler.service";
+import { ResponseUtil } from "../common/utils/response.util";
 import { CREATED_SUCCESSFULLY } from "messages";
 
 @Injectable()
@@ -81,7 +82,8 @@ export class OrderService {
         }
       } else {
         // Try to use default shipping address
-        const defaultAddress = await this.addressService.getDefaultShipping(userId);
+        const defaultAddress =
+          await this.addressService.getDefaultShipping(userId);
         if (defaultAddress) {
           shippingAddress = {
             first_name: defaultAddress.first_name,
@@ -214,7 +216,7 @@ export class OrderService {
         order: { created_at: "DESC" },
       });
 
-      return orders;
+      return ResponseUtil.success("Orders retrieved successfully", orders);
     } catch (error) {
       throw this.errorHandler.badRequest(error);
     }
@@ -231,7 +233,7 @@ export class OrderService {
         throw this.errorHandler.notFound({ message: "Order not found" });
       }
 
-      return order;
+      return ResponseUtil.success("Order retrieved successfully", order);
     } catch (error) {
       if (error.status === 404) throw error;
       throw this.errorHandler.badRequest(error);
@@ -244,7 +246,7 @@ export class OrderService {
       if (result.affected === 0) {
         throw this.errorHandler.notFound({ message: "Order not found" });
       }
-      return { message: "Order status updated successfully" };
+      return ResponseUtil.success("Order status updated successfully");
     } catch (error) {
       if (error.status === 404) throw error;
       throw this.errorHandler.badRequest(error);

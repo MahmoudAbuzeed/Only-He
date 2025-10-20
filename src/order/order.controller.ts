@@ -170,25 +170,29 @@ export class OrderController {
   @ApiResponse({
     status: 200,
     description: "Orders retrieved successfully",
-    example: [
-      {
-        id: 1,
-        order_number: "ORD-2024-000001",
-        status: "pending",
-        payment_status: "pending",
-        total_amount: 2169.96,
-        created_at: "2024-01-15T10:30:00.000Z",
-        items: [
-          {
-            id: 1,
-            item_name: "iPhone 14 Pro",
-            quantity: 2,
-            unit_price: 999.99,
-            total_price: 1999.98,
-          },
-        ],
-      },
-    ],
+    example: {
+      success: true,
+      message: "Orders retrieved successfully",
+      data: [
+        {
+          id: 1,
+          order_number: "ORD-2024-000001",
+          status: "pending",
+          payment_status: "pending",
+          total_amount: 2169.96,
+          created_at: "2024-01-15T10:30:00.000Z",
+          items: [
+            {
+              id: 1,
+              item_name: "iPhone 14 Pro",
+              quantity: 2,
+              unit_price: 999.99,
+              total_price: 1999.98,
+            },
+          ],
+        },
+      ],
+    },
   })
   @ApiResponse({ status: 401, description: "Unauthorized" })
   getMyOrders(@Request() req) {
@@ -205,42 +209,46 @@ export class OrderController {
     status: 200,
     description: "Order found",
     example: {
-      id: 1,
-      order_number: "ORD-2024-000001",
-      user_id: 1,
-      status: "pending",
-      payment_status: "pending",
-      subtotal: 1999.98,
-      tax_amount: 159.99,
-      shipping_amount: 9.99,
-      total_amount: 2169.96,
-      shipping_address: {
-        first_name: "John",
-        last_name: "Doe",
-        address_line_1: "123 Main Street",
-        city: "New York",
-        state: "NY",
-        postal_code: "10001",
-        country: "United States",
-      },
-      items: [
-        {
-          id: 1,
-          product_id: 1,
-          item_name: "iPhone 14 Pro",
-          quantity: 2,
-          unit_price: 999.99,
-          total_price: 1999.98,
-          product: {
-            id: 1,
-            name: "iPhone 14 Pro",
-            images: ["https://..."],
-          },
+      success: true,
+      message: "Order retrieved successfully",
+      data: {
+        id: 1,
+        order_number: "ORD-2024-000001",
+        user_id: 1,
+        status: "pending",
+        payment_status: "pending",
+        subtotal: 1999.98,
+        tax_amount: 159.99,
+        shipping_amount: 9.99,
+        total_amount: 2169.96,
+        shipping_address: {
+          first_name: "John",
+          last_name: "Doe",
+          address_line_1: "123 Main Street",
+          city: "New York",
+          state: "NY",
+          postal_code: "10001",
+          country: "United States",
         },
-      ],
-      payments: [],
-      created_at: "2024-01-15T10:30:00.000Z",
-      updated_at: "2024-01-15T10:30:00.000Z",
+        items: [
+          {
+            id: 1,
+            product_id: 1,
+            item_name: "iPhone 14 Pro",
+            quantity: 2,
+            unit_price: 999.99,
+            total_price: 1999.98,
+            product: {
+              id: 1,
+              name: "iPhone 14 Pro",
+              images: ["https://..."],
+            },
+          },
+        ],
+        payments: [],
+        created_at: "2024-01-15T10:30:00.000Z",
+        updated_at: "2024-01-15T10:30:00.000Z",
+      },
     },
   })
   @ApiResponse({ status: 404, description: "Order not found" })
