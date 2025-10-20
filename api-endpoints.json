@@ -869,6 +869,66 @@
         }
       }
     },
+    "banners": {
+      "getActive": {
+        "method": "GET",
+        "url": "/banner/active",
+        "description": "Get all active banners for mobile display",
+        "requiresAuth": false,
+        "response": {
+          "success": {
+            "success": true,
+            "message": "Active banners retrieved successfully",
+            "data": [
+              {
+                "id": 1,
+                "title": "Summer Sale",
+                "description": "Get 50% off on all products",
+                "imageUrl": "https://cdn.example.com/banners/summer-sale.jpg",
+                "mobileImageUrl": "https://cdn.example.com/banners/summer-sale-mobile.jpg",
+                "tabletImageUrl": "https://cdn.example.com/banners/summer-sale-tablet.jpg",
+                "actionType": "category",
+                "actionValue": "5",
+                "displayOrder": 1,
+                "buttonText": "Shop Now",
+                "textColor": "#FFFFFF",
+                "backgroundColor": "#FF5722"
+              }
+            ]
+          }
+        }
+      },
+      "trackView": {
+        "method": "POST",
+        "url": "/banner/{id}/view",
+        "description": "Track banner view for analytics",
+        "requiresAuth": false,
+        "pathParams": {
+          "id": "number (required)"
+        },
+        "response": {
+          "success": {
+            "success": true,
+            "message": "View tracked successfully"
+          }
+        }
+      },
+      "trackClick": {
+        "method": "POST",
+        "url": "/banner/{id}/click",
+        "description": "Track banner click for analytics",
+        "requiresAuth": false,
+        "pathParams": {
+          "id": "number (required)"
+        },
+        "response": {
+          "success": {
+            "success": true,
+            "message": "Click tracked successfully"
+          }
+        }
+      }
+    },
     "admin": {
       "dashboard": {
         "overview": {
@@ -2408,6 +2468,272 @@
               "inactive_packages": 3,
               "expired_packages": 2,
               "featured_packages": 5
+            }
+          }
+        }
+      },
+      "banners": {
+        "getAll": {
+          "method": "GET",
+          "url": "/admin/banners",
+          "description": "Get all banners with pagination",
+          "requiresAuth": true,
+          "requiredRole": "admin",
+          "queryParams": {
+            "page": "number (optional, default: 1)",
+            "limit": "number (optional, default: 10)",
+            "isActive": "boolean (optional)"
+          },
+          "response": {
+            "success": {
+              "success": true,
+              "message": "Banners retrieved successfully",
+              "data": [
+                {
+                  "id": 1,
+                  "title": "Summer Sale",
+                  "description": "Get 50% off",
+                  "imageUrl": "https://cdn.example.com/banner.jpg",
+                  "actionType": "category",
+                  "actionValue": "5",
+                  "displayOrder": 1,
+                  "isActive": true,
+                  "viewCount": 1500,
+                  "clickCount": 150,
+                  "createdAt": "2024-01-15T10:30:00Z"
+                }
+              ],
+              "meta": {
+                "total": 10,
+                "page": 1,
+                "limit": 10,
+                "totalPages": 1
+              }
+            }
+          }
+        },
+        "getById": {
+          "method": "GET",
+          "url": "/admin/banners/{id}",
+          "description": "Get banner by ID",
+          "requiresAuth": true,
+          "requiredRole": "admin",
+          "pathParams": {
+            "id": "number (required)"
+          },
+          "response": {
+            "success": {
+              "success": true,
+              "message": "Banner retrieved successfully",
+              "data": {
+                "id": 1,
+                "title": "Summer Sale",
+                "description": "Get 50% off",
+                "imageUrl": "https://cdn.example.com/banner.jpg",
+                "mobileImageUrl": "https://cdn.example.com/banner-mobile.jpg",
+                "actionType": "category",
+                "actionValue": "5",
+                "displayOrder": 1,
+                "isActive": true,
+                "startDate": "2024-01-01T00:00:00Z",
+                "endDate": "2024-12-31T23:59:59Z",
+                "viewCount": 1500,
+                "clickCount": 150,
+                "buttonText": "Shop Now",
+                "textColor": "#FFFFFF",
+                "backgroundColor": "#FF5722",
+                "createdAt": "2024-01-15T10:30:00Z",
+                "updatedAt": "2024-01-15T10:30:00Z"
+              }
+            }
+          }
+        },
+        "create": {
+          "method": "POST",
+          "url": "/admin/banners",
+          "description": "Create a new banner",
+          "requiresAuth": true,
+          "requiredRole": "admin",
+          "payload": {
+            "title": "string (required, max 200)",
+            "description": "string (optional)",
+            "imageUrl": "string (required, url)",
+            "mobileImageUrl": "string (optional, url)",
+            "tabletImageUrl": "string (optional, url)",
+            "actionType": "string (optional: none, product, category, package, external_url, internal_screen)",
+            "actionValue": "string (optional)",
+            "displayOrder": "number (optional, default: 0)",
+            "isActive": "boolean (optional, default: true)",
+            "startDate": "date (optional)",
+            "endDate": "date (optional)",
+            "buttonText": "string (optional, max 50)",
+            "textColor": "string (optional, hex color)",
+            "backgroundColor": "string (optional, hex color)"
+          },
+          "response": {
+            "success": {
+              "success": true,
+              "message": "Banner created successfully",
+              "data": {
+                "id": 1,
+                "title": "Summer Sale",
+                "imageUrl": "https://cdn.example.com/banner.jpg",
+                "isActive": true,
+                "createdAt": "2024-01-15T10:30:00Z"
+              }
+            }
+          }
+        },
+        "update": {
+          "method": "PATCH",
+          "url": "/admin/banners/{id}",
+          "description": "Update banner",
+          "requiresAuth": true,
+          "requiredRole": "admin",
+          "pathParams": {
+            "id": "number (required)"
+          },
+          "payload": {
+            "title": "string (optional)",
+            "description": "string (optional)",
+            "imageUrl": "string (optional)",
+            "mobileImageUrl": "string (optional)",
+            "actionType": "string (optional)",
+            "actionValue": "string (optional)",
+            "displayOrder": "number (optional)",
+            "isActive": "boolean (optional)",
+            "startDate": "date (optional)",
+            "endDate": "date (optional)"
+          },
+          "response": {
+            "success": {
+              "success": true,
+              "message": "Banner updated successfully",
+              "data": {
+                "id": 1,
+                "title": "Summer Sale Updated",
+                "isActive": true,
+                "updatedAt": "2024-01-15T10:30:00Z"
+              }
+            }
+          }
+        },
+        "delete": {
+          "method": "DELETE",
+          "url": "/admin/banners/{id}",
+          "description": "Delete banner",
+          "requiresAuth": true,
+          "requiredRole": "admin",
+          "pathParams": {
+            "id": "number (required)"
+          },
+          "response": {
+            "success": {
+              "success": true,
+              "message": "Banner deleted successfully"
+            }
+          }
+        },
+        "toggleStatus": {
+          "method": "PATCH",
+          "url": "/admin/banners/{id}/toggle-status",
+          "description": "Toggle banner active status",
+          "requiresAuth": true,
+          "requiredRole": "admin",
+          "pathParams": {
+            "id": "number (required)"
+          },
+          "response": {
+            "success": {
+              "success": true,
+              "message": "Banner status updated successfully",
+              "data": {
+                "id": 1,
+                "isActive": false
+              }
+            }
+          }
+        },
+        "reorder": {
+          "method": "POST",
+          "url": "/admin/banners/reorder",
+          "description": "Reorder banners",
+          "requiresAuth": true,
+          "requiredRole": "admin",
+          "payload": {
+            "banners": [
+              {
+                "id": 1,
+                "displayOrder": 0
+              },
+              {
+                "id": 2,
+                "displayOrder": 1
+              }
+            ]
+          },
+          "response": {
+            "success": {
+              "success": true,
+              "message": "Banners reordered successfully"
+            }
+          }
+        },
+        "getAnalytics": {
+          "method": "GET",
+          "url": "/admin/banners/{id}/analytics",
+          "description": "Get banner analytics",
+          "requiresAuth": true,
+          "requiredRole": "admin",
+          "pathParams": {
+            "id": "number (required)"
+          },
+          "response": {
+            "success": {
+              "success": true,
+              "message": "Banner analytics retrieved successfully",
+              "data": {
+                "id": 1,
+                "title": "Summer Sale",
+                "viewCount": 1500,
+                "clickCount": 150,
+                "clickThroughRate": "10.00%",
+                "isActive": true,
+                "createdAt": "2024-01-15T10:30:00Z"
+              }
+            }
+          }
+        },
+        "getAllAnalytics": {
+          "method": "GET",
+          "url": "/admin/banners/analytics",
+          "description": "Get analytics for all banners",
+          "requiresAuth": true,
+          "requiredRole": "admin",
+          "response": {
+            "success": {
+              "success": true,
+              "message": "Analytics retrieved successfully",
+              "data": {
+                "banners": [
+                  {
+                    "id": 1,
+                    "title": "Summer Sale",
+                    "viewCount": 1500,
+                    "clickCount": 150,
+                    "clickThroughRate": "10.00%",
+                    "isActive": true,
+                    "displayOrder": 1
+                  }
+                ],
+                "summary": {
+                  "totalBanners": 5,
+                  "activeBanners": 4,
+                  "totalViews": 5000,
+                  "totalClicks": 500,
+                  "averageClickThroughRate": "10.00%"
+                }
+              }
             }
           }
         }

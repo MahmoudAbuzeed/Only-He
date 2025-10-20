@@ -264,7 +264,7 @@ export class CartService {
     try {
       // Auto-create cart if it doesn't exist (e-commerce best practice)
       let cart = await this.cartRepository.findActiveCartByUser(userId);
-      
+
       if (!cart) {
         cart = await this.cartRepository.createCart(userId);
         // Return newly created empty cart
@@ -347,7 +347,11 @@ export class CartService {
       // Ensure discount doesn't exceed subtotal
       discountAmount = Math.min(discountAmount, cart.subtotal);
 
-      await this.cartRepository.applyCoupon(cart.id, couponCode, discountAmount);
+      await this.cartRepository.applyCoupon(
+        cart.id,
+        couponCode,
+        discountAmount
+      );
 
       // Recalculate totals with new discount
       await this.recalculateCartTotals(cart.id);

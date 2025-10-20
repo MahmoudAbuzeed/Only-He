@@ -7,6 +7,7 @@ import { AdminCategoryController } from "./controllers/admin-category.controller
 import { AdminOrderController } from "./controllers/admin-order.controller";
 import { AdminDashboardController } from "./controllers/admin-dashboard.controller";
 import { AdminPackageController } from "./controllers/admin-package.controller";
+import { AdminBannerController } from "./controllers/admin-banner.controller";
 
 import { AdminUserService } from "./services/admin-user.service";
 import { AdminProductService } from "./services/admin-product.service";
@@ -22,6 +23,7 @@ import { CategoryModule } from "../category/category.module";
 import { OrderModule } from "../order/order.module";
 import { CartModule } from "../cart/cart.module";
 import { FavoriteModule } from "../favorite/favorite.module";
+import { BannerModule } from "../banner/banner.module";
 import { ErrorHandler } from "shared/errorHandler.service";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { JwtModule, JwtService } from "@nestjs/jwt";
@@ -45,6 +47,7 @@ import { Product } from "../product/entities/product.entity";
     OrderModule,
     CartModule,
     FavoriteModule,
+    BannerModule,
   ],
   controllers: [
     AdminController,
@@ -54,6 +57,7 @@ import { Product } from "../product/entities/product.entity";
     AdminOrderController,
     AdminDashboardController,
     AdminPackageController,
+    AdminBannerController,
   ],
   providers: [
     AdminService,

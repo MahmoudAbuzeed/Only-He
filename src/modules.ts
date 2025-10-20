@@ -9,6 +9,7 @@ import { FavoriteModule } from "./favorite/favorite.module";
 import { AdminModule } from "./admin/admin.module";
 import { ImagesModule } from "./images/images.module";
 import { AddressModule } from "./address/address.module";
+import { BannerModule } from "./banner/banner.module";
 
 export const modules = [
   UserModule,
@@ -22,4 +23,5 @@ export const modules = [
   AdminModule,
   ImagesModule,
   AddressModule,
+  BannerModule,
 ];
