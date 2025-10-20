@@ -22,10 +22,15 @@ import { AddToCartDto } from "./dto/add-to-cart.dto";
 import { UpdateCartItemDto } from "./dto/update-cart-item.dto";
 
 @ApiTags("Cart")
-@ApiBearerAuth("JWT-auth")
+// @ApiBearerAuth("JWT-auth") // ⚠️ DISABLED FOR TESTING - RE-ENABLE IN PRODUCTION
 @Controller("cart")
 export class CartController {
   constructor(private readonly cartService: CartService) {}
+
+  // ⚠️ TESTING MODE: Using hardcoded user ID
+  private getTestUserId(req: any): number {
+    return req.user?.id || 1; // Default to user ID 1 for testing
+  }
 
   @Get()
   @ApiOperation({
@@ -70,9 +75,7 @@ export class CartController {
     },
   })
   getCart(@Request() req) {
-    // TODO: Extract user ID from JWT token
-    // For now, using a placeholder user ID
-    const userId = req.user?.id || 1;
+    const userId = this.getTestUserId(req);
     return this.cartService.getCart(userId);
   }
 
@@ -88,7 +91,7 @@ export class CartController {
     example: 5,
   })
   getCartItemCount(@Request() req) {
-    const userId = req.user?.id || 1;
+    const userId = this.getTestUserId(req);
     return this.cartService.getCartItemCount(userId);
   }
 
@@ -113,7 +116,7 @@ export class CartController {
   })
   @ApiResponse({ status: 404, description: "Product not found" })
   addToCart(@Request() req, @Body() addToCartDto: AddToCartDto) {
-    const userId = req.user?.id || 1;
+    const userId = this.getTestUserId(req);
     return this.cartService.addToCart(userId, addToCartDto);
   }
 
@@ -139,7 +142,7 @@ export class CartController {
     @Param("itemId", ParseIntPipe) itemId: number,
     @Body() updateCartItemDto: UpdateCartItemDto
   ) {
-    const userId = req.user?.id || 1;
+    const userId = this.getTestUserId(req);
     return this.cartService.updateCartItem(userId, itemId, updateCartItemDto);
   }
 
@@ -167,7 +170,7 @@ export class CartController {
     @Request() req,
     @Param("itemId", ParseIntPipe) itemId: number
   ) {
-    const userId = req.user?.id || 1;
+    const userId = this.getTestUserId(req);
     return this.cartService.increaseQuantity(userId, itemId);
   }
 
@@ -194,7 +197,7 @@ export class CartController {
     @Request() req,
     @Param("itemId", ParseIntPipe) itemId: number
   ) {
-    const userId = req.user?.id || 1;
+    const userId = this.getTestUserId(req);
     return this.cartService.decreaseQuantity(userId, itemId);
   }
 
@@ -218,7 +221,7 @@ export class CartController {
     @Request() req,
     @Param("itemId", ParseIntPipe) itemId: number
   ) {
-    const userId = req.user?.id || 1;
+    const userId = this.getTestUserId(req);
     return this.cartService.removeFromCart(userId, itemId);
   }
 
@@ -259,7 +262,7 @@ export class CartController {
   })
   @ApiResponse({ status: 404, description: "Cart not found" })
   applyCoupon(@Request() req, @Body("coupon_code") couponCode: string) {
-    const userId = req.user?.id || 1;
+    const userId = this.getTestUserId(req);
     return this.cartService.applyCoupon(userId, couponCode);
   }
 
@@ -278,7 +281,7 @@ export class CartController {
   })
   @ApiResponse({ status: 404, description: "Cart not found" })
   removeCoupon(@Request() req) {
-    const userId = req.user?.id || 1;
+    const userId = this.getTestUserId(req);
     return this.cartService.removeCoupon(userId);
   }
 
@@ -297,7 +300,7 @@ export class CartController {
   })
   @ApiResponse({ status: 404, description: "Cart not found" })
   clearCart(@Request() req) {
-    const userId = req.user?.id || 1;
+    const userId = this.getTestUserId(req);
     return this.cartService.clearCart(userId);
   }
 }

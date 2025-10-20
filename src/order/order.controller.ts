@@ -20,10 +20,15 @@ import { CreateOrderDto } from "./dto/create-order.dto";
 import { OrderStatus } from "./entities/order.entity";
 
 @ApiTags("Orders")
-@ApiBearerAuth("JWT-auth")
+// @ApiBearerAuth("JWT-auth") // ⚠️ DISABLED FOR TESTING - RE-ENABLE IN PRODUCTION
 @Controller("order")
 export class OrderController {
   constructor(private readonly orderService: OrderService) {}
+
+  // ⚠️ TESTING MODE: Using hardcoded user ID
+  private getTestUserId(req: any): number {
+    return req.user?.id || 1; // Default to user ID 1 for testing
+  }
 
   @Post()
   @ApiOperation({
@@ -153,8 +158,7 @@ export class OrderController {
     description: "Unauthorized - Invalid or missing token",
   })
   createOrder(@Request() req, @Body() createOrderDto: CreateOrderDto) {
-    // TODO: Extract user ID from JWT token
-    const userId = req.user?.id || 1;
+    const userId = this.getTestUserId(req);
     return this.orderService.createOrder(userId, createOrderDto);
   }
 
@@ -188,7 +192,7 @@ export class OrderController {
   })
   @ApiResponse({ status: 401, description: "Unauthorized" })
   getMyOrders(@Request() req) {
-    const userId = req.user?.id || 1;
+    const userId = this.getTestUserId(req);
     return this.orderService.getOrdersByUser(userId);
   }
 
@@ -242,7 +246,7 @@ export class OrderController {
   @ApiResponse({ status: 404, description: "Order not found" })
   @ApiResponse({ status: 401, description: "Unauthorized" })
   getOrderById(@Request() req, @Param("id", ParseIntPipe) id: number) {
-    const userId = req.user?.id || 1;
+    const userId = this.getTestUserId(req);
     return this.orderService.getOrderById(userId, id);
   }
 
