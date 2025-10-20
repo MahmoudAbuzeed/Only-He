@@ -7,17 +7,24 @@ import {
   ManyToOne,
   OneToMany,
   JoinColumn,
-} from 'typeorm';
-import { Category } from 'src/category/entities/category.entity';
-import { OrderItem } from 'src/order/entities/order-item.entity';
-import { CartItem } from 'src/cart/entities/cart-item.entity';
-import { PackageProduct } from 'src/package/entities/package-product.entity';
+  ValueTransformer,
+} from "typeorm";
+import { Category } from "src/category/entities/category.entity";
+import { OrderItem } from "src/order/entities/order-item.entity";
+import { CartItem } from "src/cart/entities/cart-item.entity";
+import { PackageProduct } from "src/package/entities/package-product.entity";
+
+// Transformer to convert decimal strings to numbers
+const decimalTransformer: ValueTransformer = {
+  to: (value: number) => value,
+  from: (value: string) => parseFloat(value),
+};
 
 export enum ProductStatus {
-  ACTIVE = 'active',
-  INACTIVE = 'inactive',
-  OUT_OF_STOCK = 'out_of_stock',
-  DISCONTINUED = 'discontinued',
+  ACTIVE = "active",
+  INACTIVE = "inactive",
+  OUT_OF_STOCK = "out_of_stock",
+  DISCONTINUED = "discontinued",
 }
 
 @Entity()
@@ -28,22 +35,39 @@ export class Product {
   @Column({ length: 200 })
   name: string;
 
-  @Column({ type: 'text' })
+  @Column({ type: "text" })
   description: string;
 
-  @Column({ type: 'text', nullable: true })
+  @Column({ type: "text", nullable: true })
   short_description: string;
 
   @Column({ unique: true, length: 100 })
   sku: string;
 
-  @Column({ type: 'decimal', precision: 10, scale: 2 })
+  @Column({
+    type: "decimal",
+    precision: 10,
+    scale: 2,
+    transformer: decimalTransformer,
+  })
   price: number;
 
-  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
+  @Column({
+    type: "decimal",
+    precision: 10,
+    scale: 2,
+    nullable: true,
+    transformer: decimalTransformer,
+  })
   compare_price: number; // Original price for discount display
 
-  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
+  @Column({
+    type: "decimal",
+    precision: 10,
+    scale: 2,
+    nullable: true,
+    transformer: decimalTransformer,
+  })
   cost_price: number; // Cost for profit calculation
 
   @Column({ default: 0 })
@@ -52,16 +76,22 @@ export class Product {
   @Column({ default: 0 })
   min_stock_level: number; // For low stock alerts
 
-  @Column({ type: 'decimal', precision: 8, scale: 2, nullable: true })
+  @Column({
+    type: "decimal",
+    precision: 8,
+    scale: 2,
+    nullable: true,
+    transformer: decimalTransformer,
+  })
   weight: number;
 
   @Column({ length: 50, nullable: true })
   dimensions: string; // e.g., "10x20x30 cm"
 
-  @Column('simple-array', { nullable: true })
+  @Column("simple-array", { nullable: true })
   images: string[]; // Array of image URLs
 
-  @Column({ type: 'enum', enum: ProductStatus, default: ProductStatus.ACTIVE })
+  @Column({ type: "enum", enum: ProductStatus, default: ProductStatus.ACTIVE })
   status: ProductStatus;
 
   @Column({ default: false })
@@ -76,10 +106,10 @@ export class Product {
   @Column({ default: false })
   allow_backorder: boolean;
 
-  @Column({ type: 'json', nullable: true })
+  @Column({ type: "json", nullable: true })
   attributes: Record<string, any>; // Flexible attributes (color, size, etc.)
 
-  @Column({ type: 'json', nullable: true })
+  @Column({ type: "json", nullable: true })
   seo_data: {
     meta_title?: string;
     meta_description?: string;
@@ -91,7 +121,7 @@ export class Product {
   category_id: number;
 
   @ManyToOne(() => Category, (category) => category.products)
-  @JoinColumn({ name: 'category_id' })
+  @JoinColumn({ name: "category_id" })
   category: Category;
 
   @OneToMany(() => OrderItem, (orderItem) => orderItem.product)

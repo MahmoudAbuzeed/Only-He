@@ -8,27 +8,34 @@ import {
   OneToMany,
   OneToOne,
   JoinColumn,
-} from 'typeorm';
-import { User } from 'src/user/entities/user.entity';
-import { OrderItem } from './order-item.entity';
-import { Payment } from 'src/payment/entities/payment.entity';
+  ValueTransformer,
+} from "typeorm";
+import { User } from "src/user/entities/user.entity";
+import { OrderItem } from "./order-item.entity";
+import { Payment } from "src/payment/entities/payment.entity";
+
+// Transformer to convert decimal strings to numbers
+const decimalTransformer: ValueTransformer = {
+  to: (value: number) => value,
+  from: (value: string) => parseFloat(value),
+};
 
 export enum OrderStatus {
-  PENDING = 'pending',
-  CONFIRMED = 'confirmed',
-  PROCESSING = 'processing',
-  SHIPPED = 'shipped',
-  DELIVERED = 'delivered',
-  CANCELLED = 'cancelled',
-  REFUNDED = 'refunded',
+  PENDING = "pending",
+  CONFIRMED = "confirmed",
+  PROCESSING = "processing",
+  SHIPPED = "shipped",
+  DELIVERED = "delivered",
+  CANCELLED = "cancelled",
+  REFUNDED = "refunded",
 }
 
 export enum PaymentStatus {
-  PENDING = 'pending',
-  PAID = 'paid',
-  FAILED = 'failed',
-  REFUNDED = 'refunded',
-  PARTIALLY_REFUNDED = 'partially_refunded',
+  PENDING = "pending",
+  PAID = "paid",
+  FAILED = "failed",
+  REFUNDED = "refunded",
+  PARTIALLY_REFUNDED = "partially_refunded",
 }
 
 @Entity()
@@ -42,31 +49,59 @@ export class Order {
   @Column()
   user_id: number;
 
-  @Column({ type: 'enum', enum: OrderStatus, default: OrderStatus.PENDING })
+  @Column({ type: "enum", enum: OrderStatus, default: OrderStatus.PENDING })
   status: OrderStatus;
 
-  @Column({ type: 'enum', enum: PaymentStatus, default: PaymentStatus.PENDING })
+  @Column({ type: "enum", enum: PaymentStatus, default: PaymentStatus.PENDING })
   payment_status: PaymentStatus;
 
-  @Column({ type: 'decimal', precision: 10, scale: 2 })
+  @Column({
+    type: "decimal",
+    precision: 10,
+    scale: 2,
+    transformer: decimalTransformer,
+  })
   subtotal: number;
 
-  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
+  @Column({
+    type: "decimal",
+    precision: 10,
+    scale: 2,
+    default: 0,
+    transformer: decimalTransformer,
+  })
   tax_amount: number;
 
-  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
+  @Column({
+    type: "decimal",
+    precision: 10,
+    scale: 2,
+    default: 0,
+    transformer: decimalTransformer,
+  })
   shipping_amount: number;
 
-  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
+  @Column({
+    type: "decimal",
+    precision: 10,
+    scale: 2,
+    default: 0,
+    transformer: decimalTransformer,
+  })
   discount_amount: number;
 
-  @Column({ type: 'decimal', precision: 10, scale: 2 })
+  @Column({
+    type: "decimal",
+    precision: 10,
+    scale: 2,
+    transformer: decimalTransformer,
+  })
   total_amount: number;
 
   @Column({ nullable: true })
   coupon_code: string;
 
-  @Column({ type: 'json', nullable: true })
+  @Column({ type: "json", nullable: true })
   applied_offers: {
     offer_id: number;
     offer_code: string;
@@ -74,7 +109,7 @@ export class Order {
   }[];
 
   // Shipping Information
-  @Column({ type: 'json' })
+  @Column({ type: "json" })
   shipping_address: {
     first_name: string;
     last_name: string;
@@ -88,7 +123,7 @@ export class Order {
     phone?: string;
   };
 
-  @Column({ type: 'json', nullable: true })
+  @Column({ type: "json", nullable: true })
   billing_address: {
     first_name: string;
     last_name: string;
@@ -108,21 +143,21 @@ export class Order {
   @Column({ nullable: true })
   tracking_number: string;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ type: "timestamp", nullable: true })
   shipped_at: Date;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ type: "timestamp", nullable: true })
   delivered_at: Date;
 
-  @Column({ type: 'text', nullable: true })
+  @Column({ type: "text", nullable: true })
   notes: string;
 
-  @Column({ type: 'text', nullable: true })
+  @Column({ type: "text", nullable: true })
   admin_notes: string;
 
   // Relationships
   @ManyToOne(() => User)
-  @JoinColumn({ name: 'user_id' })
+  @JoinColumn({ name: "user_id" })
   user: User;
 
   @OneToMany(() => OrderItem, (orderItem) => orderItem.order, { cascade: true })
