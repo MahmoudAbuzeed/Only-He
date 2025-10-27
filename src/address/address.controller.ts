@@ -8,6 +8,7 @@ import {
   Delete,
   Request,
   ParseIntPipe,
+  UseGuards,
 } from "@nestjs/common";
 import {
   ApiTags,
@@ -20,17 +21,14 @@ import {
 import { AddressService } from "./address.service";
 import { CreateAddressDto } from "./dto/create-address.dto";
 import { UpdateAddressDto } from "./dto/update-address.dto";
+import { JwtAuthGuard } from "../common/guards/jwt-auth.guard";
 
 @ApiTags("Addresses")
-// @ApiBearerAuth('JWT-auth') // ⚠️ DISABLED FOR TESTING - RE-ENABLE IN PRODUCTION
+@ApiBearerAuth("JWT-auth")
+@UseGuards(JwtAuthGuard)
 @Controller("addresses")
 export class AddressController {
   constructor(private readonly addressService: AddressService) {}
-
-  // ⚠️ TESTING MODE: Using hardcoded user ID
-  private getTestUserId(req: any): number {
-    return req.user?.id || 1; // Default to user ID 1 for testing
-  }
 
   @Post()
   @ApiOperation({
@@ -101,8 +99,7 @@ export class AddressController {
   @ApiResponse({ status: 400, description: "Invalid input data" })
   @ApiResponse({ status: 401, description: "Unauthorized" })
   create(@Request() req, @Body() createAddressDto: CreateAddressDto) {
-    const userId = this.getTestUserId(req);
-    return this.addressService.create(userId, createAddressDto);
+    return this.addressService.create(req.user.id, createAddressDto);
   }
 
   @Get()
@@ -151,8 +148,7 @@ export class AddressController {
   })
   @ApiResponse({ status: 401, description: "Unauthorized" })
   findAll(@Request() req) {
-    const userId = this.getTestUserId(req);
-    return this.addressService.findAll(userId);
+    return this.addressService.findAll(req.user.id);
   }
 
   @Get(":id")
@@ -186,8 +182,7 @@ export class AddressController {
   @ApiResponse({ status: 404, description: "Address not found" })
   @ApiResponse({ status: 401, description: "Unauthorized" })
   findOne(@Request() req, @Param("id", ParseIntPipe) id: number) {
-    const userId = this.getTestUserId(req);
-    return this.addressService.findOne(userId, id);
+    return this.addressService.findOne(req.user.id, id);
   }
 
   @Patch(":id")
@@ -232,8 +227,7 @@ export class AddressController {
     @Param("id", ParseIntPipe) id: number,
     @Body() updateAddressDto: UpdateAddressDto
   ) {
-    const userId = this.getTestUserId(req);
-    return this.addressService.update(userId, id, updateAddressDto);
+    return this.addressService.update(req.user.id, id, updateAddressDto);
   }
 
   @Delete(":id")
@@ -253,8 +247,7 @@ export class AddressController {
   @ApiResponse({ status: 404, description: "Address not found" })
   @ApiResponse({ status: 401, description: "Unauthorized" })
   remove(@Request() req, @Param("id", ParseIntPipe) id: number) {
-    const userId = this.getTestUserId(req);
-    return this.addressService.remove(userId, id);
+    return this.addressService.remove(req.user.id, id);
   }
 
   @Patch(":id/set-default-shipping")
@@ -274,8 +267,7 @@ export class AddressController {
   @ApiResponse({ status: 404, description: "Address not found" })
   @ApiResponse({ status: 401, description: "Unauthorized" })
   setDefaultShipping(@Request() req, @Param("id", ParseIntPipe) id: number) {
-    const userId = this.getTestUserId(req);
-    return this.addressService.setDefaultShipping(userId, id);
+    return this.addressService.setDefaultShipping(req.user.id, id);
   }
 
   @Patch(":id/set-default-billing")
@@ -295,7 +287,6 @@ export class AddressController {
   @ApiResponse({ status: 404, description: "Address not found" })
   @ApiResponse({ status: 401, description: "Unauthorized" })
   setDefaultBilling(@Request() req, @Param("id", ParseIntPipe) id: number) {
-    const userId = this.getTestUserId(req);
-    return this.addressService.setDefaultBilling(userId, id);
+    return this.addressService.setDefaultBilling(req.user.id, id);
   }
 }

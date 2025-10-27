@@ -8,6 +8,7 @@ import {
   Delete,
   ParseIntPipe,
   Request,
+  UseGuards,
 } from "@nestjs/common";
 import {
   ApiTags,
@@ -20,17 +21,14 @@ import {
 import { CartService } from "./cart.service";
 import { AddToCartDto } from "./dto/add-to-cart.dto";
 import { UpdateCartItemDto } from "./dto/update-cart-item.dto";
+import { JwtAuthGuard } from "../common/guards/jwt-auth.guard";
 
 @ApiTags("Cart")
-// @ApiBearerAuth("JWT-auth") // ⚠️ DISABLED FOR TESTING - RE-ENABLE IN PRODUCTION
+@ApiBearerAuth("JWT-auth")
+@UseGuards(JwtAuthGuard)
 @Controller("cart")
 export class CartController {
   constructor(private readonly cartService: CartService) {}
-
-  // ⚠️ TESTING MODE: Using hardcoded user ID
-  private getTestUserId(req: any): number {
-    return req.user?.id || 1; // Default to user ID 1 for testing
-  }
 
   @Get()
   @ApiOperation({
@@ -75,8 +73,7 @@ export class CartController {
     },
   })
   getCart(@Request() req) {
-    const userId = this.getTestUserId(req);
-    return this.cartService.getCart(userId);
+    return this.cartService.getCart(req.user.id);
   }
 
   @Get("count")
@@ -91,8 +88,7 @@ export class CartController {
     example: 5,
   })
   getCartItemCount(@Request() req) {
-    const userId = this.getTestUserId(req);
-    return this.cartService.getCartItemCount(userId);
+    return this.cartService.getCartItemCount(req.user.id);
   }
 
   @Post("add")
@@ -116,8 +112,7 @@ export class CartController {
   })
   @ApiResponse({ status: 404, description: "Product not found" })
   addToCart(@Request() req, @Body() addToCartDto: AddToCartDto) {
-    const userId = this.getTestUserId(req);
-    return this.cartService.addToCart(userId, addToCartDto);
+    return this.cartService.addToCart(req.user.id, addToCartDto);
   }
 
   @Patch("item/:itemId")
@@ -142,8 +137,11 @@ export class CartController {
     @Param("itemId", ParseIntPipe) itemId: number,
     @Body() updateCartItemDto: UpdateCartItemDto
   ) {
-    const userId = this.getTestUserId(req);
-    return this.cartService.updateCartItem(userId, itemId, updateCartItemDto);
+    return this.cartService.updateCartItem(
+      req.user.id,
+      itemId,
+      updateCartItemDto
+    );
   }
 
   @Patch("item/:itemId/increase")
@@ -170,8 +168,7 @@ export class CartController {
     @Request() req,
     @Param("itemId", ParseIntPipe) itemId: number
   ) {
-    const userId = this.getTestUserId(req);
-    return this.cartService.increaseQuantity(userId, itemId);
+    return this.cartService.increaseQuantity(req.user.id, itemId);
   }
 
   @Patch("item/:itemId/decrease")
@@ -197,8 +194,7 @@ export class CartController {
     @Request() req,
     @Param("itemId", ParseIntPipe) itemId: number
   ) {
-    const userId = this.getTestUserId(req);
-    return this.cartService.decreaseQuantity(userId, itemId);
+    return this.cartService.decreaseQuantity(req.user.id, itemId);
   }
 
   @Delete("item/:itemId")
@@ -221,8 +217,7 @@ export class CartController {
     @Request() req,
     @Param("itemId", ParseIntPipe) itemId: number
   ) {
-    const userId = this.getTestUserId(req);
-    return this.cartService.removeFromCart(userId, itemId);
+    return this.cartService.removeFromCart(req.user.id, itemId);
   }
 
   @Post("coupon/apply")
@@ -262,8 +257,7 @@ export class CartController {
   })
   @ApiResponse({ status: 404, description: "Cart not found" })
   applyCoupon(@Request() req, @Body("coupon_code") couponCode: string) {
-    const userId = this.getTestUserId(req);
-    return this.cartService.applyCoupon(userId, couponCode);
+    return this.cartService.applyCoupon(req.user.id, couponCode);
   }
 
   @Delete("coupon")
@@ -281,8 +275,7 @@ export class CartController {
   })
   @ApiResponse({ status: 404, description: "Cart not found" })
   removeCoupon(@Request() req) {
-    const userId = this.getTestUserId(req);
-    return this.cartService.removeCoupon(userId);
+    return this.cartService.removeCoupon(req.user.id);
   }
 
   @Delete("clear")
@@ -300,7 +293,6 @@ export class CartController {
   })
   @ApiResponse({ status: 404, description: "Cart not found" })
   clearCart(@Request() req) {
-    const userId = this.getTestUserId(req);
-    return this.cartService.clearCart(userId);
+    return this.cartService.clearCart(req.user.id);
   }
 }

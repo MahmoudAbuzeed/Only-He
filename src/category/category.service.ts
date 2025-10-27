@@ -1,28 +1,35 @@
-import { Injectable } from '@nestjs/common';
-import { CreateCategoryDto } from './dto/create-category.dto';
-import { UpdateCategoryDto } from './dto/update-category.dto';
-import { CategoryRepository } from './repositories/category.repository';
-import { ErrorHandler } from 'shared/errorHandler.service';
+import { Injectable } from "@nestjs/common";
+import { CreateCategoryDto } from "./dto/create-category.dto";
+import { UpdateCategoryDto } from "./dto/update-category.dto";
+import { CategoryRepository } from "./repositories/category.repository";
+import { ErrorHandler } from "shared/errorHandler.service";
 import {
   CREATED_SUCCESSFULLY,
   DELETED_SUCCESSFULLY,
   UPDATED_SUCCESSFULLY,
-} from 'messages';
+} from "messages";
+import { ImagesService } from "../images/images.service";
+import { ImageType } from "../images/entities/image.entity";
 
 @Injectable()
 export class CategoryService {
   constructor(
     private readonly categoryRepository: CategoryRepository,
     private readonly errorHandler: ErrorHandler,
+    private readonly imagesService: ImagesService
   ) {}
 
   async create(createCategoryDto: CreateCategoryDto) {
     try {
       // Validate parent category exists if parent_id is provided
       if (createCategoryDto.parent_id) {
-        const parentCategory = await this.categoryRepository.findOne(createCategoryDto.parent_id);
+        const parentCategory = await this.categoryRepository.findOne(
+          createCategoryDto.parent_id
+        );
         if (!parentCategory) {
-          throw this.errorHandler.badRequest({ message: 'Parent category not found' });
+          throw this.errorHandler.badRequest({
+            message: "Parent category not found",
+          });
         }
       }
 
@@ -88,6 +95,14 @@ export class CategoryService {
       if (!category) {
         throw this.errorHandler.notFound();
       }
+
+      // Include images in products
+      if (category.products && category.products.length > 0) {
+        category.products = await this.includeImagesInProducts(
+          category.products
+        );
+      }
+
       return category;
     } catch (error) {
       if (error.status === 404) throw error;
@@ -106,20 +121,29 @@ export class CategoryService {
       // Validate parent category exists if parent_id is being updated
       if (updateCategoryDto.parent_id) {
         if (updateCategoryDto.parent_id === id) {
-          throw this.errorHandler.badRequest({ message: 'Category cannot be its own parent' });
+          throw this.errorHandler.badRequest({
+            message: "Category cannot be its own parent",
+          });
         }
-        
-        const parentCategory = await this.categoryRepository.findOne(updateCategoryDto.parent_id);
+
+        const parentCategory = await this.categoryRepository.findOne(
+          updateCategoryDto.parent_id
+        );
         if (!parentCategory) {
-          throw this.errorHandler.badRequest({ message: 'Parent category not found' });
+          throw this.errorHandler.badRequest({
+            message: "Parent category not found",
+          });
         }
       }
 
-      const updatedCategory = await this.categoryRepository.update(id, updateCategoryDto);
+      const updatedCategory = await this.categoryRepository.update(
+        id,
+        updateCategoryDto
+      );
       if (updatedCategory.affected === 0) {
         throw this.errorHandler.notFound();
       }
-      
+
       return { message: UPDATED_SUCCESSFULLY };
     } catch (error) {
       if (error.status === 404 || error.status === 400) throw error;
@@ -138,15 +162,15 @@ export class CategoryService {
       // Check if category has products
       const productCount = await this.categoryRepository.countProducts(id);
       if (productCount > 0) {
-        throw this.errorHandler.badRequest({ 
-          message: `Cannot delete category with ${productCount} products. Please move or delete products first.` 
+        throw this.errorHandler.badRequest({
+          message: `Cannot delete category with ${productCount} products. Please move or delete products first.`,
         });
       }
 
       // Check if category has child categories
       if (category.children && category.children.length > 0) {
-        throw this.errorHandler.badRequest({ 
-          message: `Cannot delete category with ${category.children.length} subcategories. Please move or delete subcategories first.` 
+        throw this.errorHandler.badRequest({
+          message: `Cannot delete category with ${category.children.length} subcategories. Please move or delete subcategories first.`,
         });
       }
 
@@ -154,7 +178,7 @@ export class CategoryService {
       if (deletedCategory.affected === 0) {
         throw this.errorHandler.notFound();
       }
-      
+
       return { message: DELETED_SUCCESSFULLY };
     } catch (error) {
       if (error.status === 404 || error.status === 400) throw error;
@@ -165,14 +189,45 @@ export class CategoryService {
   async search(searchTerm: string) {
     try {
       if (!searchTerm || searchTerm.trim().length < 2) {
-        throw this.errorHandler.badRequest({ message: 'Search term must be at least 2 characters long' });
+        throw this.errorHandler.badRequest({
+          message: "Search term must be at least 2 characters long",
+        });
       }
-      
-      const categories = await this.categoryRepository.search(searchTerm.trim());
+
+      const categories = await this.categoryRepository.search(
+        searchTerm.trim()
+      );
       return categories;
     } catch (error) {
       if (error.status === 400) throw error;
       throw this.errorHandler.badRequest(error);
     }
+  }
+
+  private async includeImagesInProducts(products: any[]): Promise<any[]> {
+    if (!products || products.length === 0) {
+      return products;
+    }
+
+    const productIds = products.map((product) => product.id);
+    const imagesMap = await this.imagesService.getImagesByEntities(
+      ImageType.PRODUCT,
+      productIds
+    );
+    const primaryImagesMap =
+      await this.imagesService.getPrimaryImagesByEntities(
+        ImageType.PRODUCT,
+        productIds
+      );
+
+    return products.map((product) => ({
+      ...product,
+      images: this.imagesService.formatImagesForResponse(
+        imagesMap[product.id] || []
+      ),
+      primary_image: this.imagesService.formatImageForResponse(
+        primaryImagesMap[product.id]
+      ),
+    }));
   }
 }

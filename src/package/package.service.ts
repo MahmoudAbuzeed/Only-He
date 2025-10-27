@@ -4,12 +4,15 @@ import { CreatePackageDto } from "./dto/create-package.dto";
 import { UpdatePackageDto } from "./dto/update-package.dto";
 import { Package, PackageStatus } from "./entities/package.entity";
 import { ErrorHandler } from "shared/errorHandler.service";
+import { ImagesService } from "../images/images.service";
+import { ImageType } from "../images/entities/image.entity";
 
 @Injectable()
 export class PackageService {
   constructor(
     private readonly packageRepository: PackageRepository,
-    private readonly errorHandler: ErrorHandler
+    private readonly errorHandler: ErrorHandler,
+    private readonly imagesService: ImagesService
   ) {}
 
   async create(createPackageDto: CreatePackageDto): Promise<Package> {
@@ -68,6 +71,14 @@ export class PackageService {
       if (!package_) {
         throw this.errorHandler.notFound({ message: "Package not found" });
       }
+
+      // Include images in package products
+      if (package_.package_products && package_.package_products.length > 0) {
+        package_.package_products = await this.includeImagesInPackageProducts(
+          package_.package_products
+        );
+      }
+
       return package_;
     } catch (error) {
       if (error.status === 404) throw error;
@@ -202,5 +213,52 @@ export class PackageService {
     } catch (error) {
       throw this.errorHandler.badRequest(error);
     }
+  }
+
+  private async includeImagesInPackageProducts(
+    packageProducts: any[]
+  ): Promise<any[]> {
+    if (!packageProducts || packageProducts.length === 0) {
+      return packageProducts;
+    }
+
+    // Extract product IDs from package products
+    const productIds = packageProducts
+      .filter((pp) => pp.product && pp.product.id)
+      .map((pp) => pp.product.id);
+
+    if (productIds.length === 0) {
+      return packageProducts;
+    }
+
+    // Fetch images for all products at once
+    const imagesMap = await this.imagesService.getImagesByEntities(
+      ImageType.PRODUCT,
+      productIds
+    );
+    const primaryImagesMap =
+      await this.imagesService.getPrimaryImagesByEntities(
+        ImageType.PRODUCT,
+        productIds
+      );
+
+    // Add images to each package product's product
+    return packageProducts.map((pp) => {
+      if (pp.product && pp.product.id) {
+        return {
+          ...pp,
+          product: {
+            ...pp.product,
+            images: this.imagesService.formatImagesForResponse(
+              imagesMap[pp.product.id] || []
+            ),
+            primary_image: this.imagesService.formatImageForResponse(
+              primaryImagesMap[pp.product.id]
+            ),
+          },
+        };
+      }
+      return pp;
+    });
   }
 }

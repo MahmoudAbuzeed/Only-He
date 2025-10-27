@@ -7,6 +7,8 @@ import {
   CREATED_SUCCESSFULLY,
   DELETED_SUCCESSFULLY,
 } from 'messages';
+import { ImagesService } from '../images/images.service';
+import { ImageType } from '../images/entities/image.entity';
 
 @Injectable()
 export class FavoriteService {
@@ -14,6 +16,7 @@ export class FavoriteService {
     private readonly favoriteRepository: FavoriteRepository,
     private readonly productRepository: ProductRepository,
     private readonly errorHandler: ErrorHandler,
+    private readonly imagesService: ImagesService,
   ) {}
 
   async addToFavorites(userId: number, addToFavoritesDto: AddToFavoritesDto) {
@@ -78,10 +81,13 @@ export class FavoriteService {
     try {
       const favorites = await this.favoriteRepository.getUserFavorites(userId);
       
+      // Include images in favorites
+      const favoritesWithImages = await this.includeImagesInFavorites(favorites);
+      
       const favoriteCount = await this.favoriteRepository.getFavoriteCount(userId);
 
       return {
-        favorites,
+        favorites: favoritesWithImages,
         total_count: favoriteCount,
       };
     } catch (error) {
@@ -92,7 +98,7 @@ export class FavoriteService {
   async getFavoritesByCategory(userId: number, categoryId: number) {
     try {
       const favorites = await this.favoriteRepository.getFavoritesByCategory(userId, categoryId);
-      return favorites;
+      return await this.includeImagesInFavorites(favorites);
     } catch (error) {
       throw this.errorHandler.badRequest(error);
     }
@@ -151,5 +157,50 @@ export class FavoriteService {
       if (error.status === 400 || error.status === 404) throw error;
       throw this.errorHandler.badRequest(error);
     }
+  }
+
+  private async includeImagesInFavorites(favorites: any[]): Promise<any[]> {
+    if (!favorites || favorites.length === 0) {
+      return favorites;
+    }
+
+    // Extract product IDs from favorites
+    const productIds = favorites
+      .filter((fav) => fav.product && fav.product.id)
+      .map((fav) => fav.product.id);
+
+    if (productIds.length === 0) {
+      return favorites;
+    }
+
+    // Fetch images for all products at once
+    const imagesMap = await this.imagesService.getImagesByEntities(
+      ImageType.PRODUCT,
+      productIds
+    );
+    const primaryImagesMap =
+      await this.imagesService.getPrimaryImagesByEntities(
+        ImageType.PRODUCT,
+        productIds
+      );
+
+    // Add images to each favorite's product
+    return favorites.map((fav) => {
+      if (fav.product && fav.product.id) {
+        return {
+          ...fav,
+          product: {
+            ...fav.product,
+            images: this.imagesService.formatImagesForResponse(
+              imagesMap[fav.product.id] || []
+            ),
+            primary_image: this.imagesService.formatImageForResponse(
+              primaryImagesMap[fav.product.id]
+            ),
+          },
+        };
+      }
+      return fav;
+    });
   }
 }

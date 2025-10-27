@@ -11,6 +11,8 @@ import { AddressService } from "../address/address.service";
 import { ErrorHandler } from "shared/errorHandler.service";
 import { ResponseUtil } from "../common/utils/response.util";
 import { CREATED_SUCCESSFULLY } from "messages";
+import { ImagesService } from "../images/images.service";
+import { ImageType } from "../images/entities/image.entity";
 
 @Injectable()
 export class OrderService {
@@ -22,7 +24,8 @@ export class OrderService {
     private readonly cartService: CartService,
     private readonly productService: ProductService,
     private readonly addressService: AddressService,
-    private readonly errorHandler: ErrorHandler
+    private readonly errorHandler: ErrorHandler,
+    private readonly imagesService: ImagesService
   ) {}
 
   async createOrder(userId: number, createOrderDto: CreateOrderDto) {
@@ -216,7 +219,15 @@ export class OrderService {
         order: { created_at: "DESC" },
       });
 
-      return ResponseUtil.success("Orders retrieved successfully", orders);
+      // Include images in order items
+      const ordersWithImages = await Promise.all(
+        orders.map(async (order) => ({
+          ...order,
+          items: await this.includeImagesInOrderItems(order.items || []),
+        }))
+      );
+
+      return ResponseUtil.success("Orders retrieved successfully", ordersWithImages);
     } catch (error) {
       throw this.errorHandler.badRequest(error);
     }
@@ -233,7 +244,13 @@ export class OrderService {
         throw this.errorHandler.notFound({ message: "Order not found" });
       }
 
-      return ResponseUtil.success("Order retrieved successfully", order);
+      // Include images in order items
+      const orderWithImages = {
+        ...order,
+        items: await this.includeImagesInOrderItems(order.items || []),
+      };
+
+      return ResponseUtil.success("Order retrieved successfully", orderWithImages);
     } catch (error) {
       if (error.status === 404) throw error;
       throw this.errorHandler.badRequest(error);
@@ -294,5 +311,50 @@ export class OrderService {
     } catch (error) {
       return null;
     }
+  }
+
+  private async includeImagesInOrderItems(orderItems: any[]): Promise<any[]> {
+    if (!orderItems || orderItems.length === 0) {
+      return orderItems;
+    }
+
+    // Extract product IDs from order items
+    const productIds = orderItems
+      .filter((item) => item.product && item.product.id)
+      .map((item) => item.product.id);
+
+    if (productIds.length === 0) {
+      return orderItems;
+    }
+
+    // Fetch images for all products at once
+    const imagesMap = await this.imagesService.getImagesByEntities(
+      ImageType.PRODUCT,
+      productIds
+    );
+    const primaryImagesMap =
+      await this.imagesService.getPrimaryImagesByEntities(
+        ImageType.PRODUCT,
+        productIds
+      );
+
+    // Add images to each order item's product
+    return orderItems.map((item) => {
+      if (item.product && item.product.id) {
+        return {
+          ...item,
+          product: {
+            ...item.product,
+            images: this.imagesService.formatImagesForResponse(
+              imagesMap[item.product.id] || []
+            ),
+            primary_image: this.imagesService.formatImageForResponse(
+              primaryImagesMap[item.product.id]
+            ),
+          },
+        };
+      }
+      return item;
+    });
   }
 }

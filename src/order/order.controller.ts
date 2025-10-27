@@ -7,6 +7,7 @@ import {
   ParseIntPipe,
   Request,
   Patch,
+  UseGuards,
 } from "@nestjs/common";
 import {
   ApiTags,
@@ -18,17 +19,14 @@ import {
 import { OrderService } from "./order.service";
 import { CreateOrderDto } from "./dto/create-order.dto";
 import { OrderStatus } from "./entities/order.entity";
+import { JwtAuthGuard } from "../common/guards/jwt-auth.guard";
 
 @ApiTags("Orders")
-// @ApiBearerAuth("JWT-auth") // ⚠️ DISABLED FOR TESTING - RE-ENABLE IN PRODUCTION
+@ApiBearerAuth("JWT-auth")
+@UseGuards(JwtAuthGuard)
 @Controller("order")
 export class OrderController {
   constructor(private readonly orderService: OrderService) {}
-
-  // ⚠️ TESTING MODE: Using hardcoded user ID
-  private getTestUserId(req: any): number {
-    return req.user?.id || 1; // Default to user ID 1 for testing
-  }
 
   @Post()
   @ApiOperation({
@@ -158,8 +156,7 @@ export class OrderController {
     description: "Unauthorized - Invalid or missing token",
   })
   createOrder(@Request() req, @Body() createOrderDto: CreateOrderDto) {
-    const userId = this.getTestUserId(req);
-    return this.orderService.createOrder(userId, createOrderDto);
+    return this.orderService.createOrder(req.user.id, createOrderDto);
   }
 
   @Get()
@@ -196,8 +193,7 @@ export class OrderController {
   })
   @ApiResponse({ status: 401, description: "Unauthorized" })
   getMyOrders(@Request() req) {
-    const userId = this.getTestUserId(req);
-    return this.orderService.getOrdersByUser(userId);
+    return this.orderService.getOrdersByUser(req.user.id);
   }
 
   @Get(":id")
@@ -254,8 +250,7 @@ export class OrderController {
   @ApiResponse({ status: 404, description: "Order not found" })
   @ApiResponse({ status: 401, description: "Unauthorized" })
   getOrderById(@Request() req, @Param("id", ParseIntPipe) id: number) {
-    const userId = this.getTestUserId(req);
-    return this.orderService.getOrderById(userId, id);
+    return this.orderService.getOrderById(req.user.id, id);
   }
 
   @Patch(":id/status")

@@ -7,13 +7,16 @@ import { AddToCartDto } from "./dto/add-to-cart.dto";
 import { UpdateCartItemDto } from "./dto/update-cart-item.dto";
 import { CartItemType } from "./entities/cart-item.entity";
 import { CartStatus } from "./entities/cart.entity";
+import { ImagesService } from "../images/images.service";
+import { ImageType } from "../images/entities/image.entity";
 
 @Injectable()
 export class CartService {
   constructor(
     private readonly cartRepository: CartRepository,
     private readonly productRepository: ProductRepository,
-    private readonly errorHandler: ErrorHandler
+    private readonly errorHandler: ErrorHandler,
+    private readonly imagesService: ImagesService
   ) {}
 
   async getOrCreateCart(userId: number) {
@@ -285,10 +288,15 @@ export class CartService {
 
       const itemCount = await this.cartRepository.getCartItemCount(cart.id);
 
+      // Include images in cart items
+      const itemsWithImages = await this.includeImagesInCartItems(
+        cart.items || []
+      );
+
       return ResponseUtil.success("Cart retrieved successfully", {
         id: cart.id,
         user_id: cart.user_id,
-        items: cart.items || [],
+        items: itemsWithImages,
         subtotal: cart.subtotal || 0,
         tax_amount: cart.tax_amount || 0,
         shipping_amount: cart.shipping_amount || 0,
@@ -457,6 +465,51 @@ export class CartService {
       shipping_amount: parseFloat(shippingAmount.toFixed(2)),
       discount_amount: parseFloat(discountAmount.toFixed(2)),
       total: parseFloat(total.toFixed(2)),
+    });
+  }
+
+  private async includeImagesInCartItems(cartItems: any[]): Promise<any[]> {
+    if (!cartItems || cartItems.length === 0) {
+      return cartItems;
+    }
+
+    // Extract product IDs from cart items
+    const productIds = cartItems
+      .filter((item) => item.product && item.product.id)
+      .map((item) => item.product.id);
+
+    if (productIds.length === 0) {
+      return cartItems;
+    }
+
+    // Fetch images for all products at once
+    const imagesMap = await this.imagesService.getImagesByEntities(
+      ImageType.PRODUCT,
+      productIds
+    );
+    const primaryImagesMap =
+      await this.imagesService.getPrimaryImagesByEntities(
+        ImageType.PRODUCT,
+        productIds
+      );
+
+    // Add images to each cart item's product
+    return cartItems.map((item) => {
+      if (item.product && item.product.id) {
+        return {
+          ...item,
+          product: {
+            ...item.product,
+            images: this.imagesService.formatImagesForResponse(
+              imagesMap[item.product.id] || []
+            ),
+            primary_image: this.imagesService.formatImageForResponse(
+              primaryImagesMap[item.product.id]
+            ),
+          },
+        };
+      }
+      return item;
     });
   }
 }

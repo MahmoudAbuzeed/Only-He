@@ -99,7 +99,7 @@ export class ProductService {
   async findFeatured() {
     try {
       const products = await this.productRepository.findFeatured();
-      return products;
+      return await this.includeImagesInProducts(products);
     } catch (error) {
       throw this.errorHandler.badRequest(error);
     }
@@ -114,7 +114,7 @@ export class ProductService {
       }
 
       const products = await this.productRepository.findByCategory(categoryId);
-      return products;
+      return await this.includeImagesInProducts(products);
     } catch (error) {
       if (error.status === 404) throw error;
       throw this.errorHandler.badRequest(error);
@@ -127,7 +127,8 @@ export class ProductService {
       if (!product) {
         throw this.errorHandler.notFound();
       }
-      return product;
+      const productsWithImages = await this.includeImagesInProducts([product]);
+      return productsWithImages[0];
     } catch (error) {
       if (error.status === 404) throw error;
       throw this.errorHandler.badRequest(error);
@@ -140,7 +141,8 @@ export class ProductService {
       if (!product) {
         throw this.errorHandler.notFound();
       }
-      return product;
+      const productsWithImages = await this.includeImagesInProducts([product]);
+      return productsWithImages[0];
     } catch (error) {
       if (error.status === 404) throw error;
       throw this.errorHandler.badRequest(error);
@@ -150,7 +152,7 @@ export class ProductService {
   async findLowStock() {
     try {
       const products = await this.productRepository.findLowStock();
-      return products;
+      return await this.includeImagesInProducts(products);
     } catch (error) {
       throw this.errorHandler.badRequest(error);
     }
@@ -286,7 +288,7 @@ export class ProductService {
       }
 
       const products = await this.productRepository.search(searchTerm.trim());
-      return products;
+      return await this.includeImagesInProducts(products);
     } catch (error) {
       if (error.status === 400) throw error;
       throw this.errorHandler.badRequest(error);
