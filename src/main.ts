@@ -97,5 +97,6 @@ async function bootstrap() {
     `📚 API Documentation available at: http://localhost:${port}/api/docs`
   );
   console.log(`🎉 Only-He API successfully started on port ${port}!`);
+  console.log(`🔥 Firebase Authentication enabled for web and mobile apps`);
 }
 bootstrap();
