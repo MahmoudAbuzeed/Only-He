@@ -30,7 +30,9 @@ import { LoggerMiddleware } from "shared/logger/logger.middleware";
       password: process.env.DATABASE_PASSWORD || "postgres",
       database: process.env.DATABASE_NAME || "only_he_db",
       entities: entities,
-      synchronize: true, // Set to false in production
+      synchronize: process.env.NODE_ENV !== "production", // false in production; use migrations
+      migrations: [join(__dirname, "migrations", "*.js")],
+      migrationsRun: process.env.NODE_ENV === "production", // auto-run pending migrations on startup in production (e.g. AWS)
       ssl:
         process.env.NODE_ENV === "production"
           ? { rejectUnauthorized: false }
