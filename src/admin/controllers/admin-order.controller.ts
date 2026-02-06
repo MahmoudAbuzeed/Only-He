@@ -1,6 +1,7 @@
 import {
   Controller,
   Get,
+  Post,
   Patch,
   Param,
   Body,
@@ -169,6 +170,43 @@ export class AdminOrderController {
   @ApiResponse({ status: 404, description: 'Order not found' })
   getOrderById(@Param('id', ParseIntPipe) id: number) {
     return this.adminOrderService.getOrderById(id);
+  }
+
+  @Patch(':id/validate-phone')
+  @RequirePermissions({ resource: 'orders', action: 'update' })
+  @ApiOperation({
+    summary: 'Validate guest phone',
+    description: 'Mark order phone as validated. Optionally send confirmation SMS to guest_phone.',
+  })
+  @ApiParam({ name: 'id', description: 'Order ID', example: 1 })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        send_sms: { type: 'boolean', example: false, description: 'Send confirmation SMS to guest phone' },
+      },
+    },
+  })
+  @ApiResponse({ status: 200, description: 'Phone validated successfully' })
+  @ApiResponse({ status: 404, description: 'Order not found' })
+  validatePhone(
+    @Param('id', ParseIntPipe) id: number,
+    @Body('send_sms') sendSms?: boolean,
+  ) {
+    return this.adminOrderService.validatePhone(id, !!sendSms);
+  }
+
+  @Post(':id/send-confirmation-sms')
+  @RequirePermissions({ resource: 'orders', action: 'update' })
+  @ApiOperation({
+    summary: 'Send confirmation SMS',
+    description: 'Send order confirmation SMS to guest phone. Integrate with SNS/Twilio when available.',
+  })
+  @ApiParam({ name: 'id', description: 'Order ID', example: 1 })
+  @ApiResponse({ status: 200, description: 'SMS queued' })
+  @ApiResponse({ status: 404, description: 'Order not found' })
+  sendConfirmationSms(@Param('id', ParseIntPipe) id: number) {
+    return this.adminOrderService.sendConfirmationSms(id);
   }
 
   @Patch(':id/status')

@@ -43,6 +43,9 @@ export class AdminOrderService {
           'order.status',
           'order.payment_status',
           'order.total_amount',
+          'order.user_id',
+          'order.guest_phone',
+          'order.phone_validated_at',
           'order.created_at',
           'order.updated_at',
           'user.id',
@@ -86,9 +89,10 @@ export class AdminOrderService {
         .orderBy('order.created_at', 'DESC')
         .getMany();
 
-      // Add items count to each order
+      // Add items count and is_guest to each order
       const ordersWithItemCount = orders.map(order => ({
         ...order,
+        is_guest: order.user_id == null,
         items_count: order.items?.length || 0,
         items: undefined, // Remove items array to keep response clean
       }));
@@ -234,9 +238,61 @@ export class AdminOrderService {
         throw this.errorHandler.notFound({ message: 'Order not found' });
       }
 
-      return order;
+      return {
+        ...order,
+        is_guest: order.user_id == null,
+      };
     } catch (error) {
       if (error.status === 404) throw error;
+      throw this.errorHandler.badRequest(error);
+    }
+  }
+
+  async validatePhone(id: number, sendSms = false): Promise<{ message: string; phone_validated_at: string }> {
+    try {
+      const order = await this.orderRepository.findOne({ where: { id } });
+      if (!order) {
+        throw this.errorHandler.notFound({ message: 'Order not found' });
+      }
+      const phoneValidatedAt = new Date();
+      await this.orderRepository.update(id, {
+        phone_validated_at: phoneValidatedAt,
+        updated_at: phoneValidatedAt,
+      });
+      if (sendSms && (order.guest_phone || order.shipping_address?.phone)) {
+        const phone = order.guest_phone || order.shipping_address?.phone;
+        // Placeholder: integrate with SNS/Twilio when available
+        console.log(`[SMS] Would send confirmation to ${phone} for order ${order.order_number}`);
+      }
+      return {
+        message: 'Phone validated successfully',
+        phone_validated_at: phoneValidatedAt.toISOString(),
+      };
+    } catch (error) {
+      if (error.status === 404) throw error;
+      throw this.errorHandler.badRequest(error);
+    }
+  }
+
+  async sendConfirmationSms(id: number): Promise<{ message: string }> {
+    try {
+      const order = await this.orderRepository.findOne({ where: { id } });
+      if (!order) {
+        throw this.errorHandler.notFound({ message: 'Order not found' });
+      }
+      const phone = order.guest_phone || order.shipping_address?.phone;
+      if (!phone) {
+        throw this.errorHandler.badRequest({
+          message: 'No phone number on order to send SMS',
+        });
+      }
+      // Placeholder: integrate with SNS/Twilio when available
+      console.log(`[SMS] Send confirmation to ${phone} for order ${order.order_number}`);
+      return {
+        message: `Confirmation SMS queued for ${phone}`,
+      };
+    } catch (error) {
+      if (error.status === 404 || error.status === 400) throw error;
       throw this.errorHandler.badRequest(error);
     }
   }
@@ -266,6 +322,9 @@ export class AdminOrderService {
         updateData.shipped_at = new Date();
       } else if (updateOrderStatusDto.status === OrderStatus.DELIVERED) {
         updateData.delivered_at = new Date();
+      }
+      if (updateOrderStatusDto.status === OrderStatus.CONFIRMED) {
+        updateData.confirmed_at = new Date();
       }
 
       await this.orderRepository.update(id, updateData);

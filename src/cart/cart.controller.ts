@@ -17,24 +17,48 @@ import {
   ApiParam,
   ApiBody,
   ApiBearerAuth,
+  ApiHeader,
 } from "@nestjs/swagger";
 import { CartService } from "./cart.service";
 import { AddToCartDto } from "./dto/add-to-cart.dto";
 import { UpdateCartItemDto } from "./dto/update-cart-item.dto";
-import { JwtAuthGuard } from "../common/guards/jwt-auth.guard";
+import { CartIdentityGuard } from "./guards/cart-identity.guard";
 
 @ApiTags("Cart")
-@ApiBearerAuth("JWT-auth")
-@UseGuards(JwtAuthGuard)
 @Controller("cart")
 export class CartController {
   constructor(private readonly cartService: CartService) {}
 
-  @Get()
+  @Post("guest")
   @ApiOperation({
-    summary: "Get user cart",
+    summary: "Create guest cart",
     description:
-      "Retrieve the current user's shopping cart with all items and totals. If no cart exists, a new empty cart is automatically created.",
+      "Create a new guest cart. Returns guest_cart_id to send in X-Guest-Cart-Id header for all other cart requests. No auth required.",
+  })
+  @ApiResponse({
+    status: 201,
+    description: "Guest cart created",
+    example: { success: true, data: { guest_cart_id: "uuid-string" } },
+  })
+  createGuestCart() {
+    return this.cartService.createGuestCart().then((data) => ({
+      success: true,
+      data,
+    }));
+  }
+
+  @Get()
+  @UseGuards(CartIdentityGuard)
+  @ApiBearerAuth("JWT-auth")
+  @ApiHeader({
+    name: "X-Guest-Cart-Id",
+    description: "Guest cart ID (use when not logged in instead of Bearer token)",
+    required: false,
+  })
+  @ApiOperation({
+    summary: "Get cart",
+    description:
+      "Retrieve cart by user (Authorization) or guest (X-Guest-Cart-Id). If no cart exists, a new empty cart is created.",
   })
   @ApiResponse({
     status: 200,
@@ -73,10 +97,17 @@ export class CartController {
     },
   })
   getCart(@Request() req) {
-    return this.cartService.getCart(req.user.id);
+    return this.cartService.getCart(req.cartIdentity);
   }
 
   @Get("count")
+  @UseGuards(CartIdentityGuard)
+  @ApiBearerAuth("JWT-auth")
+  @ApiHeader({
+    name: "X-Guest-Cart-Id",
+    description: "Guest cart ID (when not logged in)",
+    required: false,
+  })
   @ApiOperation({
     summary: "Get cart item count",
     description:
@@ -88,10 +119,17 @@ export class CartController {
     example: 5,
   })
   getCartItemCount(@Request() req) {
-    return this.cartService.getCartItemCount(req.user.id);
+    return this.cartService.getCartItemCount(req.cartIdentity);
   }
 
   @Post("add")
+  @UseGuards(CartIdentityGuard)
+  @ApiBearerAuth("JWT-auth")
+  @ApiHeader({
+    name: "X-Guest-Cart-Id",
+    description: "Guest cart ID (when not logged in)",
+    required: false,
+  })
   @ApiOperation({
     summary: "Add item to cart",
     description:
@@ -112,10 +150,13 @@ export class CartController {
   })
   @ApiResponse({ status: 404, description: "Product not found" })
   addToCart(@Request() req, @Body() addToCartDto: AddToCartDto) {
-    return this.cartService.addToCart(req.user.id, addToCartDto);
+    return this.cartService.addToCart(req.cartIdentity, addToCartDto);
   }
 
   @Patch("item/:itemId")
+  @UseGuards(CartIdentityGuard)
+  @ApiBearerAuth("JWT-auth")
+  @ApiHeader({ name: "X-Guest-Cart-Id", required: false })
   @ApiOperation({
     summary: "Update cart item",
     description: "Update cart item quantity or options",
@@ -138,13 +179,16 @@ export class CartController {
     @Body() updateCartItemDto: UpdateCartItemDto
   ) {
     return this.cartService.updateCartItem(
-      req.user.id,
+      req.cartIdentity,
       itemId,
       updateCartItemDto
     );
   }
 
   @Patch("item/:itemId/increase")
+  @UseGuards(CartIdentityGuard)
+  @ApiBearerAuth("JWT-auth")
+  @ApiHeader({ name: "X-Guest-Cart-Id", required: false })
   @ApiOperation({
     summary: "Increase item quantity",
     description:
@@ -168,10 +212,13 @@ export class CartController {
     @Request() req,
     @Param("itemId", ParseIntPipe) itemId: number
   ) {
-    return this.cartService.increaseQuantity(req.user.id, itemId);
+    return this.cartService.increaseQuantity(req.cartIdentity, itemId);
   }
 
   @Patch("item/:itemId/decrease")
+  @UseGuards(CartIdentityGuard)
+  @ApiBearerAuth("JWT-auth")
+  @ApiHeader({ name: "X-Guest-Cart-Id", required: false })
   @ApiOperation({
     summary: "Decrease item quantity",
     description:
@@ -194,10 +241,13 @@ export class CartController {
     @Request() req,
     @Param("itemId", ParseIntPipe) itemId: number
   ) {
-    return this.cartService.decreaseQuantity(req.user.id, itemId);
+    return this.cartService.decreaseQuantity(req.cartIdentity, itemId);
   }
 
   @Delete("item/:itemId")
+  @UseGuards(CartIdentityGuard)
+  @ApiBearerAuth("JWT-auth")
+  @ApiHeader({ name: "X-Guest-Cart-Id", required: false })
   @ApiOperation({
     summary: "Remove item from cart",
     description:
@@ -217,10 +267,13 @@ export class CartController {
     @Request() req,
     @Param("itemId", ParseIntPipe) itemId: number
   ) {
-    return this.cartService.removeFromCart(req.user.id, itemId);
+    return this.cartService.removeFromCart(req.cartIdentity, itemId);
   }
 
   @Post("coupon/apply")
+  @UseGuards(CartIdentityGuard)
+  @ApiBearerAuth("JWT-auth")
+  @ApiHeader({ name: "X-Guest-Cart-Id", required: false })
   @ApiOperation({
     summary: "Apply coupon to cart",
     description:
@@ -257,10 +310,13 @@ export class CartController {
   })
   @ApiResponse({ status: 404, description: "Cart not found" })
   applyCoupon(@Request() req, @Body("coupon_code") couponCode: string) {
-    return this.cartService.applyCoupon(req.user.id, couponCode);
+    return this.cartService.applyCoupon(req.cartIdentity, couponCode);
   }
 
   @Delete("coupon")
+  @UseGuards(CartIdentityGuard)
+  @ApiBearerAuth("JWT-auth")
+  @ApiHeader({ name: "X-Guest-Cart-Id", required: false })
   @ApiOperation({
     summary: "Remove coupon from cart",
     description: "Remove the applied coupon code from the shopping cart",
@@ -275,10 +331,13 @@ export class CartController {
   })
   @ApiResponse({ status: 404, description: "Cart not found" })
   removeCoupon(@Request() req) {
-    return this.cartService.removeCoupon(req.user.id);
+    return this.cartService.removeCoupon(req.cartIdentity);
   }
 
   @Delete("clear")
+  @UseGuards(CartIdentityGuard)
+  @ApiBearerAuth("JWT-auth")
+  @ApiHeader({ name: "X-Guest-Cart-Id", required: false })
   @ApiOperation({
     summary: "Clear cart",
     description: "Remove all items from the shopping cart",
@@ -293,6 +352,6 @@ export class CartController {
   })
   @ApiResponse({ status: 404, description: "Cart not found" })
   clearCart(@Request() req) {
-    return this.cartService.clearCart(req.user.id);
+    return this.cartService.clearCart(req.cartIdentity);
   }
 }

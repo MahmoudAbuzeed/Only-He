@@ -142,4 +142,13 @@ export class CreateOrderDto {
   @IsString()
   @IsOptional()
   coupon_code?: string;
+
+  /** Required for guest checkout. Contact phone for the order. */
+  @ApiPropertyOptional({ 
+    example: '+1234567890', 
+    description: 'Phone number (required for guest checkout)'
+  })
+  @IsString()
+  @IsOptional()
+  phone?: string;
 }

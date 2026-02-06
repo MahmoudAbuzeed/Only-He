@@ -23,6 +23,7 @@ async function bootstrap() {
       "Accept",
       "X-Requested-With",
       "Origin",
+      "X-Guest-Cart-Id",
       "Access-Control-Request-Method",
       "Access-Control-Request-Headers",
     ],

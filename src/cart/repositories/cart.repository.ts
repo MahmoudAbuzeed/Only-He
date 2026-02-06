@@ -21,9 +21,17 @@ export class CartRepository {
     });
   }
 
-  async createCart(userId: number): Promise<Cart> {
+  async findActiveCartByGuest(guestCartId: string): Promise<Cart> {
+    return await this.cartRepository.findOne({
+      where: { guest_cart_id: guestCartId, status: CartStatus.ACTIVE },
+      relations: ['items', 'items.product', 'items.package'],
+    });
+  }
+
+  async createCart(userId?: number, guestCartId?: string): Promise<Cart> {
     const cart = this.cartRepository.create({
-      user_id: userId,
+      ...(userId != null && { user_id: userId }),
+      ...(guestCartId != null && { guest_cart_id: guestCartId }),
       status: CartStatus.ACTIVE,
       subtotal: 0,
       total: 0,

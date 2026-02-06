@@ -8,6 +8,7 @@ import {
   Request,
   Patch,
   UseGuards,
+  Query,
 } from "@nestjs/common";
 import {
   ApiTags,
@@ -15,24 +16,31 @@ import {
   ApiResponse,
   ApiBody,
   ApiBearerAuth,
+  ApiHeader,
 } from "@nestjs/swagger";
 import { OrderService } from "./order.service";
 import { CreateOrderDto } from "./dto/create-order.dto";
 import { OrderStatus } from "./entities/order.entity";
 import { JwtAuthGuard } from "../common/guards/jwt-auth.guard";
+import { CartIdentityGuard } from "../cart/guards/cart-identity.guard";
 
 @ApiTags("Orders")
-@ApiBearerAuth("JWT-auth")
-@UseGuards(JwtAuthGuard)
 @Controller("order")
 export class OrderController {
   constructor(private readonly orderService: OrderService) {}
 
   @Post()
+  @UseGuards(CartIdentityGuard)
+  @ApiBearerAuth("JWT-auth")
+  @ApiHeader({
+    name: "X-Guest-Cart-Id",
+    description: "Guest cart ID (required for guest checkout when not logged in)",
+    required: false,
+  })
   @ApiOperation({
     summary: "Create new order from cart",
     description:
-      "Creates an order from the user's active cart. Cart must have items. Automatically reserves stock and clears cart after successful order creation.",
+      "Creates an order from cart. Use Authorization (logged-in) or X-Guest-Cart-Id + phone + shipping_address (guest). Cart must have items. Reserves stock and clears cart after creation.",
   })
   @ApiBody({
     type: CreateOrderDto,
@@ -152,14 +160,44 @@ export class OrderController {
     example: { message: "Cart is empty" },
   })
   @ApiResponse({
+    status: 400,
+    description: "Guest checkout requires phone and shipping_address",
+  })
+  @ApiResponse({
     status: 401,
-    description: "Unauthorized - Invalid or missing token",
+    description: "Provide Authorization or X-Guest-Cart-Id",
   })
   createOrder(@Request() req, @Body() createOrderDto: CreateOrderDto) {
-    return this.orderService.createOrder(req.user.id, createOrderDto);
+    if (req.user) {
+      return this.orderService.createOrder(req.user.id, createOrderDto);
+    }
+    return this.orderService.createGuestOrder(
+      req.cartIdentity.guestCartId,
+      createOrderDto
+    );
+  }
+
+  @Get("track")
+  @ApiOperation({
+    summary: "Track order (guest)",
+    description:
+      "Get order status by order_number and phone. No auth. For guest orders.",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Order status and items summary",
+  })
+  @ApiResponse({ status: 404, description: "Order not found" })
+  trackOrder(
+    @Query("order_number") orderNumber: string,
+    @Query("phone") phone: string
+  ) {
+    return this.orderService.trackOrder(orderNumber, phone);
   }
 
   @Get()
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth("JWT-auth")
   @ApiOperation({
     summary: "Get my orders",
     description: "Retrieve all orders for the authenticated user",
@@ -197,6 +235,8 @@ export class OrderController {
   }
 
   @Get(":id")
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth("JWT-auth")
   @ApiOperation({
     summary: "Get order by ID",
     description: "Retrieve detailed information for a specific order",
@@ -254,6 +294,8 @@ export class OrderController {
   }
 
   @Patch(":id/status")
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth("JWT-auth")
   @ApiOperation({
     summary: "Update order status (Admin)",
     description: "Update the status of an order. Admin only endpoint.",

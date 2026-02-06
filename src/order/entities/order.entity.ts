@@ -46,8 +46,17 @@ export class Order {
   @Column({ unique: true })
   order_number: string; // e.g., ORD-2024-001
 
-  @Column()
+  @Column({ nullable: true })
   user_id: number;
+
+  @Column({ type: "varchar", length: 50, nullable: true })
+  guest_phone: string;
+
+  @Column({ type: "timestamp", nullable: true })
+  phone_validated_at: Date;
+
+  @Column({ type: "timestamp", nullable: true })
+  confirmed_at: Date;
 
   @Column({ type: "enum", enum: OrderStatus, default: OrderStatus.PENDING })
   status: OrderStatus;
@@ -156,7 +165,7 @@ export class Order {
   admin_notes: string;
 
   // Relationships
-  @ManyToOne(() => User)
+  @ManyToOne(() => User, { nullable: true })
   @JoinColumn({ name: "user_id" })
   user: User;
 

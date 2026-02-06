@@ -1,3 +1,4 @@
+import { randomUUID } from "crypto";
 import { Injectable } from "@nestjs/common";
 import { CartRepository } from "./repositories/cart.repository";
 import { ProductRepository } from "../product/repositories/product.repository";
@@ -6,9 +7,14 @@ import { ResponseUtil } from "../common/utils/response.util";
 import { AddToCartDto } from "./dto/add-to-cart.dto";
 import { UpdateCartItemDto } from "./dto/update-cart-item.dto";
 import { CartItemType } from "./entities/cart-item.entity";
-import { CartStatus } from "./entities/cart.entity";
+import { Cart, CartStatus } from "./entities/cart.entity";
 import { ImagesService } from "../images/images.service";
 import { ImageType } from "../images/entities/image.entity";
+
+export interface CartIdentity {
+  userId?: number;
+  guestCartId?: string;
+}
 
 @Injectable()
 export class CartService {
@@ -19,23 +25,73 @@ export class CartService {
     private readonly imagesService: ImagesService
   ) {}
 
-  async getOrCreateCart(userId: number) {
-    try {
-      let cart = await this.cartRepository.findActiveCartByUser(userId);
-
+  /**
+   * Resolve cart by user or guest identity. Creates cart if it doesn't exist.
+   */
+  async resolveCart(identity: CartIdentity): Promise<Cart> {
+    if (identity.userId != null) {
+      let cart = await this.cartRepository.findActiveCartByUser(identity.userId);
       if (!cart) {
-        cart = await this.cartRepository.createCart(userId);
+        cart = await this.cartRepository.createCart(identity.userId);
       }
-
       return cart;
+    }
+    if (identity.guestCartId) {
+      let cart = await this.cartRepository.findActiveCartByGuest(
+        identity.guestCartId
+      );
+      if (!cart) {
+        cart = await this.cartRepository.createCart(undefined, identity.guestCartId);
+      }
+      return cart;
+    }
+    throw this.errorHandler.badRequest({
+      message: "Cart identity required. Provide Authorization or X-Guest-Cart-Id header.",
+    });
+  }
+
+  async createGuestCart(): Promise<{ guest_cart_id: string }> {
+    const guestCartId = randomUUID();
+    await this.cartRepository.createCart(undefined, guestCartId);
+    return { guest_cart_id: guestCartId };
+  }
+
+  /**
+   * Find cart by identity without creating. Throws if not found.
+   */
+  async findCart(identity: CartIdentity): Promise<Cart> {
+    if (identity.userId != null) {
+      const cart = await this.cartRepository.findActiveCartByUser(identity.userId);
+      if (!cart) {
+        throw this.errorHandler.notFound({ message: "Cart not found" });
+      }
+      return cart;
+    }
+    if (identity.guestCartId) {
+      const cart = await this.cartRepository.findActiveCartByGuest(
+        identity.guestCartId
+      );
+      if (!cart) {
+        throw this.errorHandler.notFound({ message: "Cart not found" });
+      }
+      return cart;
+    }
+    throw this.errorHandler.badRequest({
+      message: "Cart identity required. Provide Authorization or X-Guest-Cart-Id header.",
+    });
+  }
+
+  async getOrCreateCart(identity: CartIdentity) {
+    try {
+      return await this.resolveCart(identity);
     } catch (error) {
       throw this.errorHandler.badRequest(error);
     }
   }
 
-  async addToCart(userId: number, addToCartDto: AddToCartDto) {
+  async addToCart(identity: CartIdentity, addToCartDto: AddToCartDto) {
     try {
-      const cart = await this.getOrCreateCart(userId);
+      const cart = await this.getOrCreateCart(identity);
 
       // Validate item exists and is available
       if (addToCartDto.item_type === CartItemType.PRODUCT) {
@@ -112,12 +168,9 @@ export class CartService {
     }
   }
 
-  async increaseQuantity(userId: number, itemId: number) {
+  async increaseQuantity(identity: CartIdentity, itemId: number) {
     try {
-      const cart = await this.cartRepository.findActiveCartByUser(userId);
-      if (!cart) {
-        throw this.errorHandler.notFound({ message: "Cart not found" });
-      }
+      const cart = await this.findCart(identity);
 
       const cartItem = cart.items.find((item) => item.id === itemId);
       if (!cartItem) {
@@ -156,12 +209,9 @@ export class CartService {
     }
   }
 
-  async decreaseQuantity(userId: number, itemId: number) {
+  async decreaseQuantity(identity: CartIdentity, itemId: number) {
     try {
-      const cart = await this.cartRepository.findActiveCartByUser(userId);
-      if (!cart) {
-        throw this.errorHandler.notFound({ message: "Cart not found" });
-      }
+      const cart = await this.findCart(identity);
 
       const cartItem = cart.items.find((item) => item.id === itemId);
       if (!cartItem) {
@@ -170,7 +220,7 @@ export class CartService {
 
       if (cartItem.quantity <= 1) {
         // If quantity is 1, remove the item instead
-        return await this.removeFromCart(userId, itemId);
+        return await this.removeFromCart(identity, itemId);
       }
 
       const newQuantity = cartItem.quantity - 1;
@@ -194,15 +244,12 @@ export class CartService {
   }
 
   async updateCartItem(
-    userId: number,
+    identity: CartIdentity,
     itemId: number,
     updateDto: UpdateCartItemDto
   ) {
     try {
-      const cart = await this.cartRepository.findActiveCartByUser(userId);
-      if (!cart) {
-        throw this.errorHandler.notFound({ message: "Cart not found" });
-      }
+      const cart = await this.findCart(identity);
 
       const cartItem = cart.items.find((item) => item.id === itemId);
       if (!cartItem) {
@@ -239,12 +286,9 @@ export class CartService {
     }
   }
 
-  async removeFromCart(userId: number, itemId: number) {
+  async removeFromCart(identity: CartIdentity, itemId: number) {
     try {
-      const cart = await this.cartRepository.findActiveCartByUser(userId);
-      if (!cart) {
-        throw this.errorHandler.notFound({ message: "Cart not found" });
-      }
+      const cart = await this.findCart(identity);
 
       const cartItem = cart.items.find((item) => item.id === itemId);
       if (!cartItem) {
@@ -263,40 +307,17 @@ export class CartService {
     }
   }
 
-  async getCart(userId: number) {
+  async getCart(identity: CartIdentity) {
     try {
-      // Auto-create cart if it doesn't exist (e-commerce best practice)
-      let cart = await this.cartRepository.findActiveCartByUser(userId);
-
-      if (!cart) {
-        cart = await this.cartRepository.createCart(userId);
-        // Return newly created empty cart
-        return ResponseUtil.success("Cart retrieved successfully", {
-          id: cart.id,
-          user_id: cart.user_id,
-          items: [],
-          subtotal: 0,
-          tax_amount: 0,
-          shipping_amount: 0,
-          discount_amount: 0,
-          total: 0,
-          item_count: 0,
-          status: cart.status,
-          created_at: cart.created_at,
-        });
-      }
+      const cart = await this.resolveCart(identity);
 
       const itemCount = await this.cartRepository.getCartItemCount(cart.id);
 
-      // Include images in cart items
-      const itemsWithImages = await this.includeImagesInCartItems(
-        cart.items || []
-      );
-
-      return ResponseUtil.success("Cart retrieved successfully", {
+      const basePayload = {
         id: cart.id,
-        user_id: cart.user_id,
-        items: itemsWithImages,
+        user_id: cart.user_id ?? null,
+        ...(cart.guest_cart_id && { guest_cart_id: cart.guest_cart_id }),
+        items: [] as any[],
         subtotal: cart.subtotal || 0,
         tax_amount: cart.tax_amount || 0,
         shipping_amount: cart.shipping_amount || 0,
@@ -307,18 +328,31 @@ export class CartService {
         status: cart.status,
         created_at: cart.created_at,
         updated_at: cart.updated_at,
+      };
+
+      if (!cart.items || cart.items.length === 0) {
+        return ResponseUtil.success("Cart retrieved successfully", {
+          ...basePayload,
+          items: [],
+        });
+      }
+
+      const itemsWithImages = await this.includeImagesInCartItems(
+        cart.items || []
+      );
+
+      return ResponseUtil.success("Cart retrieved successfully", {
+        ...basePayload,
+        items: itemsWithImages,
       });
     } catch (error) {
       throw this.errorHandler.badRequest(error);
     }
   }
 
-  async applyCoupon(userId: number, couponCode: string) {
+  async applyCoupon(identity: CartIdentity, couponCode: string) {
     try {
-      const cart = await this.cartRepository.findActiveCartByUser(userId);
-      if (!cart) {
-        throw this.errorHandler.notFound({ message: "Cart not found" });
-      }
+      const cart = await this.findCart(identity);
 
       if (!cart.items || cart.items.length === 0) {
         throw this.errorHandler.badRequest({
@@ -374,12 +408,9 @@ export class CartService {
     }
   }
 
-  async removeCoupon(userId: number) {
+  async removeCoupon(identity: CartIdentity) {
     try {
-      const cart = await this.cartRepository.findActiveCartByUser(userId);
-      if (!cart) {
-        throw this.errorHandler.notFound({ message: "Cart not found" });
-      }
+      const cart = await this.findCart(identity);
 
       await this.cartRepository.applyCoupon(cart.id, null, 0);
       await this.recalculateCartTotals(cart.id);
@@ -391,12 +422,9 @@ export class CartService {
     }
   }
 
-  async clearCart(userId: number) {
+  async clearCart(identity: CartIdentity) {
     try {
-      const cart = await this.cartRepository.findActiveCartByUser(userId);
-      if (!cart) {
-        throw this.errorHandler.notFound({ message: "Cart not found" });
-      }
+      const cart = await this.findCart(identity);
 
       await this.cartRepository.clearCart(cart.id);
 
@@ -407,16 +435,24 @@ export class CartService {
     }
   }
 
-  async getCartItemCount(userId: number): Promise<number> {
+  async getCartItemCount(identity: CartIdentity): Promise<number> {
     try {
-      const cart = await this.cartRepository.findActiveCartByUser(userId);
-      if (!cart) {
-        return 0;
-      }
-
+      const cart = await this.findCart(identity);
       return await this.cartRepository.getCartItemCount(cart.id);
     } catch (error) {
       return 0;
+    }
+  }
+
+  /**
+   * Clear cart by cart id (used by order service after creating guest order).
+   */
+  async clearCartByCartId(cartId: number) {
+    try {
+      await this.cartRepository.clearCart(cartId);
+      return ResponseUtil.successNoData("Cart cleared successfully");
+    } catch (error) {
+      throw this.errorHandler.badRequest(error);
     }
   }
 

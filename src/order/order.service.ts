@@ -30,9 +30,8 @@ export class OrderService {
 
   async createOrder(userId: number, createOrderDto: CreateOrderDto) {
     try {
-      // Get user's active cart
-      const cartResponse = await this.cartService.getCart(userId);
-      const cart = cartResponse.data; // Extract cart data from response
+      const cartResponse = await this.cartService.getCart({ userId });
+      const cart = cartResponse.data;
       if (!cart.items || cart.items.length === 0) {
         throw this.errorHandler.badRequest({ message: "Cart is empty" });
       }
@@ -194,8 +193,120 @@ export class OrderService {
         }
       }
 
-      // Clear the cart after successful order creation
-      await this.cartService.clearCart(userId);
+      await this.cartService.clearCart({ userId });
+
+      return {
+        message: CREATED_SUCCESSFULLY,
+        data: {
+          order_id: savedOrder.id,
+          order_number: savedOrder.order_number,
+          total_amount: savedOrder.total_amount,
+        },
+      };
+    } catch (error) {
+      if (error.status === 400) throw error;
+      throw this.errorHandler.badRequest(error);
+    }
+  }
+
+  async createGuestOrder(guestCartId: string, createOrderDto: CreateOrderDto) {
+    try {
+      const cartResponse = await this.cartService.getCart({ guestCartId });
+      const cart = cartResponse.data;
+      if (!cart.items || cart.items.length === 0) {
+        throw this.errorHandler.badRequest({ message: "Cart is empty" });
+      }
+
+      const phone =
+        createOrderDto.phone?.trim() ||
+        createOrderDto.shipping_address?.phone?.trim();
+      if (!phone) {
+        throw this.errorHandler.badRequest({
+          message: "Phone number is required for guest checkout",
+        });
+      }
+      if (!createOrderDto.shipping_address) {
+        throw this.errorHandler.badRequest({
+          message: "Shipping address is required for guest checkout",
+        });
+      }
+
+      for (const cartItem of cart.items) {
+        if (cartItem.product) {
+          const hasStock = await this.productService.checkStock(
+            cartItem.product.id,
+            cartItem.quantity
+          );
+          if (!hasStock) {
+            throw this.errorHandler.badRequest({
+              message: `Insufficient stock for product: ${cartItem.product.name}`,
+            });
+          }
+        }
+      }
+
+      const shippingAddress = {
+        ...createOrderDto.shipping_address,
+        phone: createOrderDto.shipping_address.phone || phone,
+      };
+      const billingAddress =
+        createOrderDto.billing_address || shippingAddress;
+
+      const orderNumber = await this.generateOrderNumber();
+
+      const order = this.orderRepository.create({
+        order_number: orderNumber,
+        user_id: null,
+        guest_phone: phone,
+        status: OrderStatus.PENDING,
+        payment_status: PaymentStatus.PENDING,
+        subtotal: cart.subtotal,
+        tax_amount: cart.tax_amount || 0,
+        shipping_amount: cart.shipping_amount || 0,
+        discount_amount: cart.discount_amount || 0,
+        total_amount: cart.total,
+        coupon_code: createOrderDto.coupon_code || (cart as any).coupon_code,
+        applied_offers: (cart as any).applied_offers || [],
+        shipping_address: shippingAddress,
+        billing_address: billingAddress,
+        shipping_method: createOrderDto.shipping_method,
+        notes: createOrderDto.notes,
+      });
+
+      const savedOrder = await this.orderRepository.save(order);
+
+      for (const cartItem of cart.items) {
+        const orderItem = this.orderItemRepository.create({
+          order_id: savedOrder.id,
+          item_type: cartItem.item_type as OrderItemType,
+          product_id: cartItem.product_id,
+          package_id: cartItem.package_id,
+          quantity: cartItem.quantity,
+          unit_price: cartItem.unit_price,
+          total_price: cartItem.total_price,
+          item_name:
+            cartItem.product?.name || cartItem.package?.name || "Unknown Item",
+          item_sku: cartItem.product?.sku || cartItem.package?.sku,
+          item_details: {
+            description:
+              cartItem.product?.description || cartItem.package?.description,
+            image_url:
+              cartItem.product?.images?.[0] || cartItem.package?.image_url,
+            attributes: cartItem.product?.attributes,
+          },
+          product_options: cartItem.product_options,
+          applied_discounts: cartItem.applied_discounts,
+        });
+        await this.orderItemRepository.save(orderItem);
+        if (cartItem.product) {
+          await this.productService.reserveStock(
+            cartItem.product.id,
+            cartItem.quantity
+          );
+        }
+      }
+
+      await this.cartService.clearCartByCartId(cart.id);
 
       return {
         message: CREATED_SUCCESSFULLY,
@@ -266,6 +377,49 @@ export class OrderService {
       return ResponseUtil.success("Order status updated successfully");
     } catch (error) {
       if (error.status === 404) throw error;
+      throw this.errorHandler.badRequest(error);
+    }
+  }
+
+  /**
+   * Public order tracking by order_number + phone (for guest orders).
+   * Returns minimal status and items; no auth required.
+   */
+  async trackOrder(orderNumber: string, phone: string) {
+    try {
+      const normalizedPhone = phone?.trim();
+      if (!orderNumber?.trim() || !normalizedPhone) {
+        throw this.errorHandler.badRequest({
+          message: "order_number and phone are required",
+        });
+      }
+      const order = await this.orderRepository.findOne({
+        where: { order_number: orderNumber.trim() },
+        relations: ["items", "items.product"],
+      });
+      if (!order) {
+        throw this.errorHandler.notFound({ message: "Order not found" });
+      }
+      const matchPhone =
+        order.guest_phone?.trim() ||
+        (order.shipping_address as any)?.phone?.trim();
+      if (!matchPhone || matchPhone !== normalizedPhone) {
+        throw this.errorHandler.notFound({ message: "Order not found" });
+      }
+      const safeOrder = {
+        order_number: order.order_number,
+        status: order.status,
+        total_amount: order.total_amount,
+        created_at: order.created_at,
+        items: (order.items || []).map((item) => ({
+          item_name: item.item_name,
+          quantity: item.quantity,
+          total_price: item.total_price,
+        })),
+      };
+      return ResponseUtil.success("Order retrieved successfully", safeOrder);
+    } catch (error) {
+      if (error.status === 400 || error.status === 404) throw error;
       throw this.errorHandler.badRequest(error);
     }
   }

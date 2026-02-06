@@ -29,8 +29,11 @@ export class Cart {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
+  @Column({ nullable: true })
   user_id: number;
+
+  @Column({ type: "varchar", length: 36, nullable: true, unique: true })
+  guest_cart_id: string;
 
   @Column({ type: "enum", enum: CartStatus, default: CartStatus.ACTIVE })
   status: CartStatus;
@@ -94,7 +97,7 @@ export class Cart {
   last_activity: Date;
 
   // Relationships
-  @ManyToOne(() => User)
+  @ManyToOne(() => User, { nullable: true })
   @JoinColumn({ name: "user_id" })
   user: User;
 

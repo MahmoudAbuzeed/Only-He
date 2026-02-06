@@ -7,6 +7,7 @@ import { CartController } from "./cart.controller";
 import { Cart } from "./entities/cart.entity";
 import { CartItem } from "./entities/cart-item.entity";
 import { CartRepository } from "./repositories/cart.repository";
+import { CartIdentityGuard } from "./guards/cart-identity.guard";
 import { ProductModule } from "../product/product.module";
 import { UserModule } from "../user/user.module";
 import { ImagesModule } from "../images/images.module";
@@ -24,7 +25,7 @@ import { ErrorHandler } from "shared/errorHandler.service";
     }),
   ],
   controllers: [CartController],
-  providers: [CartService, CartRepository, ErrorHandler],
-  exports: [CartService, CartRepository],
+  providers: [CartService, CartRepository, CartIdentityGuard, ErrorHandler],
+  exports: [CartService, CartRepository, CartIdentityGuard],
 })
 export class CartModule {}
