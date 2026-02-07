@@ -128,15 +128,16 @@ export class AdminProductService {
       // Get total count
       const total = await queryBuilder.getCount();
 
-      // Apply sorting and pagination
+      // Apply sorting and pagination (product table has name_en/name_ar, not name)
       const validSortFields = ['name', 'price', 'stock_quantity', 'created_at', 'updated_at'];
       const sortField = validSortFields.includes(sort_by) ? sort_by : 'created_at';
-      const sortDirection = sort_order.toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
+      const sortColumn = sortField === 'name' ? 'name_en' : sortField;
+      const sortDirection = (sort_order && String(sort_order).toUpperCase() === 'ASC') ? 'ASC' : 'DESC';
 
       const products = await queryBuilder
         .skip(skip)
         .take(limit)
-        .orderBy(`product.${sortField}`, sortDirection)
+        .orderBy(`product.${sortColumn}`, sortDirection)
         .getMany();
 
       // Add stock status to each product
@@ -231,9 +232,6 @@ export class AdminProductService {
         throw this.errorHandler.notFound({ message: 'Product not found' });
       }
 
-      // TODO: Check if product has orders, you might want to prevent deletion
-      // For now, we'll allow deletion
-
       const result = await this.productRepository.remove(id);
       if (result.affected === 0) {
         throw this.errorHandler.notFound({ message: 'Product not found' });
@@ -242,6 +240,22 @@ export class AdminProductService {
       return { message: DELETED_SUCCESSFULLY };
     } catch (error) {
       if (error.status === 404) throw error;
+      // PostgreSQL FK violation (23503): product still referenced (e.g. in cart, order_item)
+      const code = error.code ?? error.driverError?.code;
+      const table = error.table ?? error.driverError?.table ?? '';
+      if (code === '23503') {
+        const ref = table === 'cart_item'
+          ? 'shopping carts'
+          : table === 'order_item'
+            ? 'orders'
+            : table
+              ? `"${table}"`
+              : 'other data';
+        throw this.errorHandler.badRequest({
+          message: `Cannot delete product: it is still in use (referenced in ${ref}). Remove it from carts or wait for orders to be completed.`,
+          code: 'PRODUCT_IN_USE',
+        });
+      }
       throw this.errorHandler.badRequest(error);
     }
   }

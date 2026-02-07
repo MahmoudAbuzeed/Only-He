@@ -57,12 +57,16 @@ export class AdminProductController {
     summary: 'Get all products (Admin)',
     description: 'Retrieve all products with advanced filtering, pagination, and stock information'
   })
-  @ApiQuery({ name: 'page', required: false, description: 'Page number', example: 1 })
+  @ApiQuery({ name: 'page', required: false, description: 'Page number (1-based)', example: 1 })
   @ApiQuery({ name: 'limit', required: false, description: 'Items per page', example: 20 })
-  @ApiQuery({ name: 'search', required: false, description: 'Search by name or SKU', example: 'laptop' })
-  @ApiQuery({ name: 'category_id', required: false, description: 'Filter by category', example: 1 })
-  @ApiQuery({ name: 'status', required: false, description: 'Filter by status', example: 'active' })
-  @ApiQuery({ name: 'low_stock', required: false, description: 'Show only low stock products', example: true })
+  @ApiQuery({ name: 'search', required: false, description: 'Search by name (en/ar), description, or SKU', example: 'laptop' })
+  @ApiQuery({ name: 'category_id', required: false, description: 'Filter by category ID', example: 1 })
+  @ApiQuery({ name: 'status', required: false, description: 'Filter by status (e.g. active, inactive)', example: 'active' })
+  @ApiQuery({ name: 'min_price', required: false, description: 'Minimum price', example: 10 })
+  @ApiQuery({ name: 'max_price', required: false, description: 'Maximum price', example: 1000 })
+  @ApiQuery({ name: 'low_stock', required: false, description: 'Only low stock: "true"', example: 'true' })
+  @ApiQuery({ name: 'sort_by', required: false, description: 'Sort field: name, price, stock_quantity, created_at, updated_at', example: 'created_at' })
+  @ApiQuery({ name: 'sort_order', required: false, description: 'Sort order: ASC | DESC', example: 'DESC' })
   @ApiResponse({ 
     status: 200, 
     description: 'Products retrieved successfully',
