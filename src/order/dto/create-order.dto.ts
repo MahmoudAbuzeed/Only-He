@@ -33,15 +33,15 @@ export class AddressDto {
   @IsNotEmpty()
   city: string;
 
-  @ApiProperty({ example: 'NY', description: 'State or province' })
+  @ApiPropertyOptional({ example: 'NY', description: 'State or province (optional in some countries)' })
   @IsString()
-  @IsNotEmpty()
-  state: string;
+  @IsOptional()
+  state?: string;
 
-  @ApiProperty({ example: '10001', description: 'Postal or ZIP code' })
+  @ApiPropertyOptional({ example: '10001', description: 'Postal or ZIP code (optional in some countries)' })
   @IsString()
-  @IsNotEmpty()
-  postal_code: string;
+  @IsOptional()
+  postal_code?: string;
 
   @ApiProperty({ example: 'United States', description: 'Country' })
   @IsString()

@@ -77,11 +77,14 @@ export class OrderService {
         // Use provided address
         shippingAddress = createOrderDto.shipping_address;
 
-        // Save address if requested
+        // Save address if requested (state/postal_code default to '' for address entity)
         if (createOrderDto.save_shipping_address) {
+          const addr = createOrderDto.shipping_address;
           await this.addressService.create(userId, {
             label: createOrderDto.address_label || "Shipping Address",
-            ...createOrderDto.shipping_address,
+            ...addr,
+            state: addr.state ?? "",
+            postal_code: addr.postal_code ?? "",
           });
         }
       } else {
