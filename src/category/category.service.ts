@@ -43,7 +43,7 @@ export class CategoryService {
   async findAll() {
     try {
       const categories = await this.categoryRepository.findAll();
-      return categories;
+      return this.enrichCategoriesWithPrimaryImage(categories);
     } catch (error) {
       throw this.errorHandler.badRequest(error);
     }
@@ -52,7 +52,7 @@ export class CategoryService {
   async findActive() {
     try {
       const categories = await this.categoryRepository.findActive();
-      return categories;
+      return this.enrichCategoriesWithPrimaryImage(categories);
     } catch (error) {
       throw this.errorHandler.badRequest(error);
     }
@@ -61,7 +61,7 @@ export class CategoryService {
   async findRootCategories() {
     try {
       const categories = await this.categoryRepository.findRootCategories();
-      return categories;
+      return this.enrichCategoriesWithPrimaryImage(categories);
     } catch (error) {
       throw this.errorHandler.badRequest(error);
     }
@@ -70,7 +70,7 @@ export class CategoryService {
   async findByParent(parentId: number) {
     try {
       const categories = await this.categoryRepository.findByParent(parentId);
-      return categories;
+      return this.enrichCategoriesWithPrimaryImage(categories);
     } catch (error) {
       throw this.errorHandler.badRequest(error);
     }
@@ -82,7 +82,8 @@ export class CategoryService {
       if (!category) {
         throw this.errorHandler.notFound();
       }
-      return category;
+      const [enriched] = await this.enrichCategoriesWithPrimaryImage([category]);
+      return enriched ?? category;
     } catch (error) {
       if (error.status === 404) throw error;
       throw this.errorHandler.badRequest(error);
@@ -96,14 +97,16 @@ export class CategoryService {
         throw this.errorHandler.notFound();
       }
 
-      // Include images in products
-      if (category.products && category.products.length > 0) {
-        category.products = await this.includeImagesInProducts(
-          category.products
-        );
+      const [enrichedCategory] = await this.enrichCategoriesWithPrimaryImage([
+        category,
+      ]);
+      const out = enrichedCategory ?? category;
+
+      if (out.products && out.products.length > 0) {
+        out.products = await this.includeImagesInProducts(out.products);
       }
 
-      return category;
+      return out;
     } catch (error) {
       if (error.status === 404) throw error;
       throw this.errorHandler.badRequest(error);
@@ -197,11 +200,57 @@ export class CategoryService {
       const categories = await this.categoryRepository.search(
         searchTerm.trim()
       );
-      return categories;
+      return this.enrichCategoriesWithPrimaryImage(categories);
     } catch (error) {
       if (error.status === 400) throw error;
       throw this.errorHandler.badRequest(error);
     }
+  }
+
+  /**
+   * Fill image_url from the images table (primary image) when category.image_url is null.
+   * Works for trees: collects all category IDs (including children), fetches primary images, then assigns.
+   */
+  private async enrichCategoriesWithPrimaryImage(
+    categories: any[]
+  ): Promise<any[]> {
+    if (!categories?.length) return categories ?? [];
+    const ids = this.collectCategoryIds(categories);
+    if (ids.length === 0) return categories;
+    const primaryMap = await this.imagesService.getPrimaryImagesByEntities(
+      ImageType.CATEGORY,
+      ids
+    );
+    return this.applyPrimaryImageToCategories(categories, primaryMap);
+  }
+
+  private collectCategoryIds(categories: any[]): number[] {
+    const ids: number[] = [];
+    for (const c of categories) {
+      if (c?.id) ids.push(c.id);
+      if (c?.children?.length)
+        ids.push(...this.collectCategoryIds(c.children));
+    }
+    return ids;
+  }
+
+  private applyPrimaryImageToCategories(
+    categories: any[],
+    primaryMap: { [entityId: number]: { s3_url: string } | null }
+  ): any[] {
+    return categories.map((c) => {
+      const primary = primaryMap[c.id];
+      const imageUrl =
+        c.image_url || (primary?.s3_url ?? null);
+      const out = { ...c, image_url: imageUrl };
+      if (out.children?.length) {
+        out.children = this.applyPrimaryImageToCategories(
+          out.children,
+          primaryMap
+        );
+      }
+      return out;
+    });
   }
 
   private async includeImagesInProducts(products: any[]): Promise<any[]> {

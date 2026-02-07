@@ -59,18 +59,22 @@ export class UserService {
 
   async signIn(signInDto: SignInDto) {
     try {
+      // Normalize: trim whitespace so copied emails like " admin@only-he.com" work
+      const email = signInDto.email?.trim();
+      const phone = signInDto.phone?.trim();
+
       // Validate that either email or phone is provided
-      if (!signInDto.email && !signInDto.phone) {
+      if (!email && !phone) {
         throw this.errorHandler.badRequest({
           message: "Either email or phone number is required",
         });
       }
 
       let user;
-      if (signInDto.email) {
-        user = await this.userRepo.getByEmail(signInDto.email);
-      } else if (signInDto.phone) {
-        user = await this.userRepo.getByPhone(signInDto.phone);
+      if (email) {
+        user = await this.userRepo.getByEmail(email);
+      } else if (phone) {
+        user = await this.userRepo.getByPhone(phone);
       }
 
       if (!user) {
