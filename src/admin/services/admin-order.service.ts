@@ -23,12 +23,15 @@ export class AdminOrderService {
       const {
         page = 1,
         limit = 20,
+        search,
         status,
         user_id,
         date_from,
         date_to,
         min_amount,
         max_amount,
+        sort_by = 'created_at',
+        sort_order = 'DESC',
       } = filters;
 
       const skip = (page - 1) * limit;
@@ -55,7 +58,15 @@ export class AdminOrderService {
           'items.id',
         ]);
 
-      // Apply filters
+      // Search: order number, guest phone, or customer name/email
+      if (search && String(search).trim()) {
+        const term = `%${String(search).trim()}%`;
+        queryBuilder = queryBuilder.andWhere(
+          '(order.order_number ILIKE :search OR order.guest_phone ILIKE :search OR user.first_name ILIKE :search OR user.last_name ILIKE :search OR user.email ILIKE :search)',
+          { search: term },
+        );
+      }
+
       if (status) {
         queryBuilder = queryBuilder.andWhere('order.status = :status', { status });
       }
@@ -64,29 +75,38 @@ export class AdminOrderService {
         queryBuilder = queryBuilder.andWhere('order.user_id = :userId', { userId: user_id });
       }
 
-      if (date_from && date_to) {
-        queryBuilder = queryBuilder.andWhere('order.created_at BETWEEN :dateFrom AND :dateTo', {
-          dateFrom: new Date(date_from),
-          dateTo: new Date(date_to),
-        });
+      // Date filters: support date_from only, date_to only, or both
+      if (date_from) {
+        const fromDate = new Date(date_from);
+        fromDate.setHours(0, 0, 0, 0);
+        queryBuilder = queryBuilder.andWhere('order.created_at >= :dateFrom', { dateFrom: fromDate });
+      }
+      if (date_to) {
+        const toDate = new Date(date_to);
+        toDate.setHours(23, 59, 59, 999);
+        queryBuilder = queryBuilder.andWhere('order.created_at <= :dateTo', { dateTo: toDate });
       }
 
-      if (min_amount) {
+      if (min_amount !== undefined && min_amount !== '') {
         queryBuilder = queryBuilder.andWhere('order.total_amount >= :minAmount', { minAmount: min_amount });
       }
 
-      if (max_amount) {
+      if (max_amount !== undefined && max_amount !== '') {
         queryBuilder = queryBuilder.andWhere('order.total_amount <= :maxAmount', { maxAmount: max_amount });
       }
 
       // Get total count
       const total = await queryBuilder.getCount();
 
-      // Apply pagination and get results
+      // Sort: created_at, total_amount, order_number, status, updated_at
+      const validSortFields = ['created_at', 'total_amount', 'order_number', 'status', 'updated_at'];
+      const orderByField = validSortFields.includes(sort_by) ? sort_by : 'created_at';
+      const orderDirection = (sort_order && String(sort_order).toUpperCase() === 'ASC') ? 'ASC' : 'DESC';
+
       const orders = await queryBuilder
         .skip(skip)
         .take(limit)
-        .orderBy('order.created_at', 'DESC')
+        .orderBy(`order.${orderByField}`, orderDirection)
         .getMany();
 
       // Add items count and is_guest to each order

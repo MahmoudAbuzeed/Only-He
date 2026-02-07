@@ -160,6 +160,16 @@ export class PackageService {
     }
   }
 
+  async toggleStatus(id: number): Promise<Package> {
+    const package_ = await this.packageRepository.findOne(id);
+    if (!package_) {
+      throw this.errorHandler.notFound({ message: "Package not found" });
+    }
+    const newStatus =
+      package_.status === PackageStatus.ACTIVE ? PackageStatus.INACTIVE : PackageStatus.ACTIVE;
+    return await this.packageRepository.updateStatus(id, newStatus);
+  }
+
   async search(query: string, limit: number = 10): Promise<Package[]> {
     try {
       if (!query || query.trim().length < 2) {

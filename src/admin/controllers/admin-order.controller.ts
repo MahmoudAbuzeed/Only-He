@@ -30,14 +30,17 @@ export class AdminOrderController {
     summary: 'Get all orders (Admin)',
     description: 'Retrieve all orders with filtering, pagination, and detailed information'
   })
-  @ApiQuery({ name: 'page', required: false, description: 'Page number', example: 1 })
+  @ApiQuery({ name: 'page', required: false, description: 'Page number (1-based)', example: 1 })
   @ApiQuery({ name: 'limit', required: false, description: 'Items per page', example: 20 })
+  @ApiQuery({ name: 'search', required: false, description: 'Search by order number, guest phone, or customer name/email', example: 'ORD-2024' })
   @ApiQuery({ name: 'status', required: false, description: 'Filter by order status', enum: OrderStatus })
   @ApiQuery({ name: 'user_id', required: false, description: 'Filter by user ID', example: 1 })
-  @ApiQuery({ name: 'date_from', required: false, description: 'Filter from date (YYYY-MM-DD)', example: '2024-01-01' })
-  @ApiQuery({ name: 'date_to', required: false, description: 'Filter to date (YYYY-MM-DD)', example: '2024-12-31' })
-  @ApiQuery({ name: 'min_amount', required: false, description: 'Minimum order amount', example: 100 })
-  @ApiQuery({ name: 'max_amount', required: false, description: 'Maximum order amount', example: 1000 })
+  @ApiQuery({ name: 'date_from', required: false, description: 'Orders from this date (YYYY-MM-DD). Can use alone or with date_to.', example: '2024-01-01' })
+  @ApiQuery({ name: 'date_to', required: false, description: 'Orders up to this date (YYYY-MM-DD). Can use alone or with date_from.', example: '2024-12-31' })
+  @ApiQuery({ name: 'min_amount', required: false, description: 'Minimum order total amount', example: 100 })
+  @ApiQuery({ name: 'max_amount', required: false, description: 'Maximum order total amount', example: 1000 })
+  @ApiQuery({ name: 'sort_by', required: false, description: 'Sort field: created_at, total_amount, order_number, status, updated_at', example: 'created_at' })
+  @ApiQuery({ name: 'sort_order', required: false, description: 'Sort order: ASC | DESC', example: 'DESC' })
   @ApiResponse({ 
     status: 200, 
     description: 'Orders retrieved successfully',

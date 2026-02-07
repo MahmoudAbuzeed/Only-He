@@ -4,6 +4,7 @@ import {
   Post,
   Body,
   Patch,
+  Put,
   Param,
   Delete,
   Query,
@@ -323,6 +324,29 @@ export class AdminPackageController {
   @ApiResponse({ status: 404, description: "Package not found" })
   remove(@Param("id", ParseIntPipe) id: number) {
     return this.packageService.remove(id);
+  }
+
+  @Put(":id/toggle-status")
+  @RequirePermissions({ resource: "packages", action: "update" })
+  @ApiOperation({
+    summary: "Toggle package status",
+    description: "Toggle package between active and inactive (no body required)",
+  })
+  @ApiParam({ name: "id", description: "Package ID", example: 1 })
+  @ApiResponse({
+    status: 200,
+    description: "Package status toggled successfully",
+    example: {
+      id: 1,
+      name_en: "Electronics Bundle",
+      name_ar: "باقة إلكترونيات",
+      status: "inactive",
+      updated_at: "2024-01-15T10:30:00Z",
+    },
+  })
+  @ApiResponse({ status: 404, description: "Package not found" })
+  toggleStatus(@Param("id", ParseIntPipe) id: number) {
+    return this.packageService.toggleStatus(id);
   }
 
   @Patch(":id/status")
