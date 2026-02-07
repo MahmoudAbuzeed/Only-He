@@ -137,7 +137,7 @@ export class BannerService {
 
     return ResponseUtil.success("Banner analytics retrieved successfully", {
       id: banner.id,
-      title: banner.title,
+      title: banner.title_en || banner.title_ar,
       viewCount: banner.viewCount,
       clickCount: banner.clickCount,
       clickThroughRate: `${ctr}%`,
@@ -160,7 +160,7 @@ export class BannerService {
 
       return {
         id: banner.id,
-        title: banner.title,
+        title: banner.title_en || banner.title_ar,
         viewCount: banner.viewCount,
         clickCount: banner.clickCount,
         clickThroughRate: `${ctr}%`,

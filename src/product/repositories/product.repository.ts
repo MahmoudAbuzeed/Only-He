@@ -138,9 +138,10 @@ export class ProductRepository {
     return await this.productRepository
       .createQueryBuilder('product')
       .leftJoinAndSelect('product.category', 'category')
-      .where('product.name ILIKE :searchTerm', { searchTerm: `%${searchTerm}%` })
-      .orWhere('product.description ILIKE :searchTerm', { searchTerm: `%${searchTerm}%` })
-      .orWhere('product.sku ILIKE :searchTerm', { searchTerm: `%${searchTerm}%` })
+      .where(
+        '(product.name_en ILIKE :searchTerm OR product.name_ar ILIKE :searchTerm OR product.description_en ILIKE :searchTerm OR product.description_ar ILIKE :searchTerm OR product.sku ILIKE :searchTerm)',
+        { searchTerm: `%${searchTerm}%` }
+      )
       .andWhere('product.status = :status', { status: ProductStatus.ACTIVE })
       .orderBy('product.created_at', 'DESC')
       .getMany();
@@ -173,7 +174,7 @@ export class ProductRepository {
 
     if (filters.search) {
       queryBuilder.andWhere(
-        '(product.name ILIKE :search OR product.description ILIKE :search OR product.sku ILIKE :search)',
+        '(product.name_en ILIKE :search OR product.name_ar ILIKE :search OR product.description_en ILIKE :search OR product.description_ar ILIKE :search OR product.sku ILIKE :search)',
         { search: `%${filters.search}%` }
       );
     }
@@ -181,7 +182,7 @@ export class ProductRepository {
 
   private getSortField(sortBy: string): string {
     const allowedSortFields = {
-      name: 'product.name',
+      name: 'product.name_en',
       price: 'product.price',
       created_at: 'product.created_at',
       updated_at: 'product.updated_at',

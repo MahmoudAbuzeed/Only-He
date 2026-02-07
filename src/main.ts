@@ -21,6 +21,8 @@ async function bootstrap() {
       "Content-Type",
       "Authorization",
       "Accept",
+      "Accept-Language",
+      "X-Language",
       "X-Requested-With",
       "Origin",
       "X-Guest-Cart-Id",

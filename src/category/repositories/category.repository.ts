@@ -21,7 +21,7 @@ export class CategoryRepository {
   async findAll(): Promise<Category[]> {
     return await this.categoryRepository.find({
       relations: ['parent', 'children', 'products'],
-      order: { sort_order: 'ASC', name: 'ASC' },
+      order: { sort_order: 'ASC', name_en: 'ASC' },
     });
   }
 
@@ -29,7 +29,7 @@ export class CategoryRepository {
     return await this.categoryRepository.find({
       where: { is_active: true },
       relations: ['parent', 'children'],
-      order: { sort_order: 'ASC', name: 'ASC' },
+      order: { sort_order: 'ASC', name_en: 'ASC' },
     });
   }
 
@@ -37,7 +37,7 @@ export class CategoryRepository {
     return await this.categoryRepository.find({
       where: { parent_id: null, is_active: true },
       relations: ['children'],
-      order: { sort_order: 'ASC', name: 'ASC' },
+      order: { sort_order: 'ASC', name_en: 'ASC' },
     });
   }
 
@@ -45,7 +45,7 @@ export class CategoryRepository {
     return await this.categoryRepository.find({
       where: { parent_id: parentId, is_active: true },
       relations: ['children'],
-      order: { sort_order: 'ASC', name: 'ASC' },
+      order: { sort_order: 'ASC', name_en: 'ASC' },
     });
   }
 
@@ -82,17 +82,18 @@ export class CategoryRepository {
   async search(searchTerm: string): Promise<Category[]> {
     return await this.categoryRepository
       .createQueryBuilder('category')
-      .where('category.name ILIKE :searchTerm', { searchTerm: `%${searchTerm}%` })
-      .orWhere('category.description ILIKE :searchTerm', { searchTerm: `%${searchTerm}%` })
+      .where('category.name_en ILIKE :searchTerm OR category.name_ar ILIKE :searchTerm', { searchTerm: `%${searchTerm}%` })
+      .orWhere('category.description_en ILIKE :searchTerm OR category.description_ar ILIKE :searchTerm', { searchTerm: `%${searchTerm}%` })
       .andWhere('category.is_active = :isActive', { isActive: true })
       .orderBy('category.sort_order', 'ASC')
-      .addOrderBy('category.name', 'ASC')
+      .addOrderBy('category.name_en', 'ASC')
       .getMany();
   }
 
-  // Additional methods for AdminCategoryService
   async findByName(name: string): Promise<Category> {
-    return await this.categoryRepository.findOne({ where: { name } });
+    return await this.categoryRepository.findOne({
+      where: [{ name_en: name }, { name_ar: name }],
+    });
   }
 
   async findOneWithDetails(id: number): Promise<Category> {
@@ -144,7 +145,7 @@ export class CategoryRepository {
   async findAllWithHierarchy(): Promise<Category[]> {
     return await this.categoryRepository.find({
       relations: ['parent', 'children'],
-      order: { sort_order: 'ASC', name: 'ASC' },
+      order: { sort_order: 'ASC', name_en: 'ASC' },
     });
   }
 

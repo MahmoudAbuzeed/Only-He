@@ -8,10 +8,12 @@ import {
   Delete,
   Query,
   ParseIntPipe,
+  Request,
 } from '@nestjs/common';
 import { CategoryService } from './category.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
+import { toLocalizedEntity } from '../common/utils/i18n.util';
 
 @Controller('category')
 export class CategoryController {
@@ -23,36 +25,51 @@ export class CategoryController {
   }
 
   @Get()
-  findAll(@Query('active') active?: string) {
-    if (active === 'true') {
-      return this.categoryService.findActive();
-    }
-    return this.categoryService.findAll();
+  async findAll(@Request() req: any, @Query('active') active?: string) {
+    const data = active === 'true'
+      ? await this.categoryService.findActive()
+      : await this.categoryService.findAll();
+    const lang = req.language || 'en';
+    const list = Array.isArray(data) ? data : [data];
+    return list.map((c: any) => toLocalizedEntity(c, lang, 'category'));
   }
 
   @Get('root')
-  findRootCategories() {
-    return this.categoryService.findRootCategories();
+  async findRootCategories(@Request() req: any) {
+    const data = await this.categoryService.findRootCategories();
+    const lang = req.language || 'en';
+    return (data || []).map((c: any) => toLocalizedEntity(c, lang, 'category'));
   }
 
   @Get('search')
-  search(@Query('q') searchTerm: string) {
-    return this.categoryService.search(searchTerm);
+  async search(@Request() req: any, @Query('q') searchTerm: string) {
+    const data = await this.categoryService.search(searchTerm);
+    const lang = req.language || 'en';
+    return (data || []).map((c: any) => toLocalizedEntity(c, lang, 'category'));
   }
 
   @Get('parent/:parentId')
-  findByParent(@Param('parentId', ParseIntPipe) parentId: number) {
-    return this.categoryService.findByParent(parentId);
+  async findByParent(@Request() req: any, @Param('parentId', ParseIntPipe) parentId: number) {
+    const data = await this.categoryService.findByParent(parentId);
+    const lang = req.language || 'en';
+    return (data || []).map((c: any) => toLocalizedEntity(c, lang, 'category'));
   }
 
   @Get(':id')
-  findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.categoryService.findOne(id);
+  async findOne(@Request() req: any, @Param('id', ParseIntPipe) id: number) {
+    const data = await this.categoryService.findOne(id);
+    return toLocalizedEntity(data, req.language || 'en', 'category');
   }
 
   @Get(':id/products')
-  findWithProducts(@Param('id', ParseIntPipe) id: number) {
-    return this.categoryService.findWithProducts(id);
+  async findWithProducts(@Request() req: any, @Param('id', ParseIntPipe) id: number) {
+    const category = await this.categoryService.findWithProducts(id);
+    const lang = req.language || 'en';
+    const out = toLocalizedEntity(category, lang, 'category') as any;
+    if (out?.products?.length) {
+      out.products = out.products.map((p: any) => toLocalizedEntity(p, lang, 'product'));
+    }
+    return out;
   }
 
   @Patch(':id')

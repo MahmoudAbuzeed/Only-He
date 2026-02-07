@@ -10,6 +10,8 @@ import { ProductService } from "../product/product.service";
 import { AddressService } from "../address/address.service";
 import { ErrorHandler } from "shared/errorHandler.service";
 import { ResponseUtil } from "../common/utils/response.util";
+import { localizeOrderItems } from "../common/utils/i18n.util";
+import { SupportedLanguage } from "../common/middleware/language.middleware";
 import { CREATED_SUCCESSFULLY } from "messages";
 import { ImagesService } from "../images/images.service";
 import { ImageType } from "../images/entities/image.entity";
@@ -45,7 +47,7 @@ export class OrderService {
           );
           if (!hasStock) {
             throw this.errorHandler.badRequest({
-              message: `Insufficient stock for product: ${cartItem.product.name}`,
+              message: `Insufficient stock for product: ${cartItem.product.name_en || cartItem.product.name_ar}`,
             });
           }
         }
@@ -168,12 +170,14 @@ export class OrderService {
           quantity: cartItem.quantity,
           unit_price: cartItem.unit_price,
           total_price: cartItem.total_price,
-          item_name:
-            cartItem.product?.name || cartItem.package?.name || "Unknown Item",
+          item_name_en:
+            cartItem.product?.name_en || cartItem.package?.name_en || "Unknown Item",
+          item_name_ar:
+            cartItem.product?.name_ar || cartItem.package?.name_ar || "Unknown Item",
           item_sku: cartItem.product?.sku || cartItem.package?.sku,
           item_details: {
-            description:
-              cartItem.product?.description || cartItem.package?.description,
+            description_en: cartItem.product?.description_en || cartItem.package?.description_en,
+            description_ar: cartItem.product?.description_ar || cartItem.package?.description_ar,
             image_url:
               cartItem.product?.images?.[0] || cartItem.package?.image_url,
             attributes: cartItem.product?.attributes,
@@ -184,7 +188,6 @@ export class OrderService {
 
         await this.orderItemRepository.save(orderItem);
 
-        // Reserve stock for products
         if (cartItem.product) {
           await this.productService.reserveStock(
             cartItem.product.id,
@@ -239,7 +242,7 @@ export class OrderService {
           );
           if (!hasStock) {
             throw this.errorHandler.badRequest({
-              message: `Insufficient stock for product: ${cartItem.product.name}`,
+              message: `Insufficient stock for product: ${cartItem.product.name_en || cartItem.product.name_ar}`,
             });
           }
         }
@@ -284,12 +287,14 @@ export class OrderService {
           quantity: cartItem.quantity,
           unit_price: cartItem.unit_price,
           total_price: cartItem.total_price,
-          item_name:
-            cartItem.product?.name || cartItem.package?.name || "Unknown Item",
+          item_name_en:
+            cartItem.product?.name_en || cartItem.package?.name_en || "Unknown Item",
+          item_name_ar:
+            cartItem.product?.name_ar || cartItem.package?.name_ar || "Unknown Item",
           item_sku: cartItem.product?.sku || cartItem.package?.sku,
           item_details: {
-            description:
-              cartItem.product?.description || cartItem.package?.description,
+            description_en: cartItem.product?.description_en || cartItem.package?.description_en,
+            description_ar: cartItem.product?.description_ar || cartItem.package?.description_ar,
             image_url:
               cartItem.product?.images?.[0] || cartItem.package?.image_url,
             attributes: cartItem.product?.attributes,
@@ -322,7 +327,7 @@ export class OrderService {
     }
   }
 
-  async getOrdersByUser(userId: number) {
+  async getOrdersByUser(userId: number, lang: SupportedLanguage = "en") {
     try {
       const orders = await this.orderRepository.find({
         where: { user_id: userId },
@@ -330,7 +335,6 @@ export class OrderService {
         order: { created_at: "DESC" },
       });
 
-      // Include images in order items
       const ordersWithImages = await Promise.all(
         orders.map(async (order) => ({
           ...order,
@@ -338,13 +342,18 @@ export class OrderService {
         }))
       );
 
-      return ResponseUtil.success("Orders retrieved successfully", ordersWithImages);
+      const localized = ordersWithImages.map((order) => ({
+        ...order,
+        items: localizeOrderItems(order.items, lang),
+      }));
+
+      return ResponseUtil.success("Orders retrieved successfully", localized);
     } catch (error) {
       throw this.errorHandler.badRequest(error);
     }
   }
 
-  async getOrderById(userId: number, orderId: number) {
+  async getOrderById(userId: number, orderId: number, lang: SupportedLanguage = "en") {
     try {
       const order = await this.orderRepository.findOne({
         where: { id: orderId, user_id: userId },
@@ -355,13 +364,17 @@ export class OrderService {
         throw this.errorHandler.notFound({ message: "Order not found" });
       }
 
-      // Include images in order items
       const orderWithImages = {
         ...order,
         items: await this.includeImagesInOrderItems(order.items || []),
       };
 
-      return ResponseUtil.success("Order retrieved successfully", orderWithImages);
+      const localized = {
+        ...orderWithImages,
+        items: localizeOrderItems(orderWithImages.items, lang),
+      };
+
+      return ResponseUtil.success("Order retrieved successfully", localized);
     } catch (error) {
       if (error.status === 404) throw error;
       throw this.errorHandler.badRequest(error);
@@ -385,7 +398,7 @@ export class OrderService {
    * Public order tracking by order_number + phone (for guest orders).
    * Returns minimal status and items; no auth required.
    */
-  async trackOrder(orderNumber: string, phone: string) {
+  async trackOrder(orderNumber: string, phone: string, lang: SupportedLanguage = "en") {
     try {
       const normalizedPhone = phone?.trim();
       if (!orderNumber?.trim() || !normalizedPhone) {
@@ -406,13 +419,15 @@ export class OrderService {
       if (!matchPhone || matchPhone !== normalizedPhone) {
         throw this.errorHandler.notFound({ message: "Order not found" });
       }
+      const getLocalizedText = (obj: any, key: string) =>
+        lang === "ar" ? (obj?.[`${key}_ar`] ?? obj?.[`${key}_en`]) : (obj?.[`${key}_en`] ?? obj?.[`${key}_ar`]);
       const safeOrder = {
         order_number: order.order_number,
         status: order.status,
         total_amount: order.total_amount,
         created_at: order.created_at,
-        items: (order.items || []).map((item) => ({
-          item_name: item.item_name,
+        items: (order.items || []).map((item: any) => ({
+          item_name: getLocalizedText(item, "item_name") ?? "Item",
           quantity: item.quantity,
           total_price: item.total_price,
         })),

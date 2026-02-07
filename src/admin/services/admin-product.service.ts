@@ -36,7 +36,8 @@ export class AdminProductService {
 
       // Generate SKU if not provided
       if (!createProductDto.sku) {
-        createProductDto.sku = await this.generateSKU(createProductDto.name);
+        const nameForSku = createProductDto.name_en || createProductDto.name_ar || 'Product';
+        createProductDto.sku = await this.generateSKU(nameForSku);
       }
 
       // Validate SKU uniqueness
@@ -79,7 +80,8 @@ export class AdminProductService {
         .leftJoinAndSelect('product.category', 'category')
         .select([
           'product.id',
-          'product.name',
+          'product.name_en',
+          'product.name_ar',
           'product.sku',
           'product.price',
           'product.cost_price',
@@ -90,13 +92,14 @@ export class AdminProductService {
           'product.created_at',
           'product.updated_at',
           'category.id',
-          'category.name',
+          'category.name_en',
+          'category.name_ar',
         ]);
 
       // Apply filters
       if (search) {
         queryBuilder = queryBuilder.where(
-          '(product.name ILIKE :search OR product.sku ILIKE :search OR product.description ILIKE :search)',
+          '(product.name_en ILIKE :search OR product.name_ar ILIKE :search OR product.sku ILIKE :search OR product.description_en ILIKE :search OR product.description_ar ILIKE :search)',
           { search: `%${search}%` }
         );
       }
@@ -359,7 +362,8 @@ export class AdminProductService {
       return {
         product: {
           id: product.id,
-          name: product.name,
+          name_en: product.name_en,
+          name_ar: product.name_ar,
           sku: product.sku,
         },
         analytics,
@@ -407,11 +411,12 @@ export class AdminProductService {
         throw this.errorHandler.notFound({ message: 'Product not found' });
       }
 
-      // Create a copy with modified name and SKU
+      const baseName = product.name_en || product.name_ar || 'Product';
       const duplicateData = {
         ...product,
-        name: `${product.name} (Copy)`,
-        sku: await this.generateSKU(`${product.name} Copy`),
+        name_en: product.name_en ? `${product.name_en} (Copy)` : undefined,
+        name_ar: product.name_ar ? `${product.name_ar} (Copy)` : undefined,
+        sku: await this.generateSKU(`${baseName} Copy`),
         id: undefined,
         created_at: undefined,
         updated_at: undefined,
@@ -440,10 +445,11 @@ export class AdminProductService {
       const products = result.products;
 
       // Generate CSV content
-      const headers = 'ID,Name,SKU,Category,Price,Cost Price,Stock,Status,Created Date\n';
-      const rows = products.map(product => 
-        `${product.id},"${product.name}","${product.sku}","${product.category?.name || 'N/A'}",${product.price},${product.cost_price || 0},${product.stock_quantity},${product.status},${product.created_at}`
-      ).join('\n');
+      const headers = 'ID,Name (EN),Name (AR),SKU,Category,Price,Cost Price,Stock,Status,Created Date\n';
+      const rows = products.map(product => {
+        const categoryName = product.category ? (product.category.name_en || product.category.name_ar || 'N/A') : 'N/A';
+        return `${product.id},"${product.name_en || ''}","${product.name_ar || ''}","${product.sku}","${categoryName}",${product.price},${product.cost_price || 0},${product.stock_quantity},${product.status},${product.created_at}`;
+      }).join('\n');
 
       const csvContent = headers + rows;
 

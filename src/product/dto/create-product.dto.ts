@@ -14,16 +14,28 @@ import { ProductStatus } from '../entities/product.entity';
 
 export class CreateProductDto {
   @IsString()
-  @IsNotEmpty()
-  name: string;
-
-  @IsString()
-  @IsNotEmpty()
-  description: string;
+  @IsOptional()
+  name_en?: string;
 
   @IsString()
   @IsOptional()
-  short_description?: string;
+  name_ar?: string;
+
+  @IsString()
+  @IsOptional()
+  description_en?: string;
+
+  @IsString()
+  @IsOptional()
+  description_ar?: string;
+
+  @IsString()
+  @IsOptional()
+  short_description_en?: string;
+
+  @IsString()
+  @IsOptional()
+  short_description_ar?: string;
 
   @IsString()
   @IsNotEmpty()
@@ -91,13 +103,25 @@ export class CreateProductDto {
   @IsOptional()
   attributes?: Record<string, any>;
 
+  @IsString()
+  @IsOptional()
+  meta_title_en?: string;
+
+  @IsString()
+  @IsOptional()
+  meta_title_ar?: string;
+
+  @IsString()
+  @IsOptional()
+  meta_description_en?: string;
+
+  @IsString()
+  @IsOptional()
+  meta_description_ar?: string;
+
   @IsObject()
   @IsOptional()
-  seo_data?: {
-    meta_title?: string;
-    meta_description?: string;
-    slug?: string;
-  };
+  seo_data?: { slug?: string; [key: string]: any };
 
   @IsNumber()
   @IsNotEmpty()

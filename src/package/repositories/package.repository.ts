@@ -73,16 +73,19 @@ export class PackageRepository {
 
     if (search) {
       queryBuilder.andWhere(
-        "(package.name ILIKE :search OR package.description ILIKE :search OR package.sku ILIKE :search)",
+        "(package.name_en ILIKE :search OR package.name_ar ILIKE :search OR package.description_en ILIKE :search OR package.description_ar ILIKE :search OR package.sku ILIKE :search)",
         { search: `%${search}%` }
       );
     }
 
     // Add sorting
     const validSortFields = ["name", "price", "created_at", "status"];
-    const sortField = validSortFields.includes(sort_by)
-      ? sort_by
-      : "created_at";
+    const sortField =
+      sort_by === "name"
+        ? "name_en"
+        : validSortFields.includes(sort_by)
+          ? sort_by
+          : "created_at";
     queryBuilder.orderBy(`package.${sortField}`, sort_order);
 
     const total = await queryBuilder.getCount();
@@ -194,7 +197,7 @@ export class PackageRepository {
       .leftJoinAndSelect("package.package_products", "packageProducts")
       .leftJoinAndSelect("packageProducts.product", "product")
       .where(
-        "package.name ILIKE :query OR package.description ILIKE :query OR package.sku ILIKE :query",
+        "package.name_en ILIKE :query OR package.name_ar ILIKE :query OR package.description_en ILIKE :query OR package.description_ar ILIKE :query OR package.sku ILIKE :query",
         { query: `%${query}%` }
       )
       .andWhere("package.status = :status", { status: PackageStatus.ACTIVE })

@@ -32,14 +32,23 @@ export class Product {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ length: 200 })
-  name: string;
+  @Column({ length: 200, nullable: true })
+  name_en: string;
 
-  @Column({ type: "text" })
-  description: string;
+  @Column({ length: 200, nullable: true })
+  name_ar: string;
 
   @Column({ type: "text", nullable: true })
-  short_description: string;
+  description_en: string;
+
+  @Column({ type: "text", nullable: true })
+  description_ar: string;
+
+  @Column({ type: "text", nullable: true })
+  short_description_en: string;
+
+  @Column({ type: "text", nullable: true })
+  short_description_ar: string;
 
   @Column({ unique: true, length: 100 })
   sku: string;
@@ -109,11 +118,22 @@ export class Product {
   @Column({ type: "json", nullable: true })
   attributes: Record<string, any>; // Flexible attributes (color, size, etc.)
 
+  @Column({ nullable: true })
+  meta_title_en: string;
+
+  @Column({ nullable: true })
+  meta_title_ar: string;
+
+  @Column({ type: "text", nullable: true })
+  meta_description_en: string;
+
+  @Column({ type: "text", nullable: true })
+  meta_description_ar: string;
+
   @Column({ type: "json", nullable: true })
   seo_data: {
-    meta_title?: string;
-    meta_description?: string;
     slug?: string;
+    [key: string]: any;
   };
 
   // Relationships

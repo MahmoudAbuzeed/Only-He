@@ -189,10 +189,11 @@ export class OrderController {
   })
   @ApiResponse({ status: 404, description: "Order not found" })
   trackOrder(
+    @Request() req: any,
     @Query("order_number") orderNumber: string,
     @Query("phone") phone: string
   ) {
-    return this.orderService.trackOrder(orderNumber, phone);
+    return this.orderService.trackOrder(orderNumber, phone, req.language || "en");
   }
 
   @Get()
@@ -230,8 +231,8 @@ export class OrderController {
     },
   })
   @ApiResponse({ status: 401, description: "Unauthorized" })
-  getMyOrders(@Request() req) {
-    return this.orderService.getOrdersByUser(req.user.id);
+  getMyOrders(@Request() req: any) {
+    return this.orderService.getOrdersByUser(req.user.id, req.language || "en");
   }
 
   @Get(":id")
@@ -289,8 +290,8 @@ export class OrderController {
   })
   @ApiResponse({ status: 404, description: "Order not found" })
   @ApiResponse({ status: 401, description: "Unauthorized" })
-  getOrderById(@Request() req, @Param("id", ParseIntPipe) id: number) {
-    return this.orderService.getOrderById(req.user.id, id);
+  getOrderById(@Request() req: any, @Param("id", ParseIntPipe) id: number) {
+    return this.orderService.getOrderById(req.user.id, id, req.language || "en");
   }
 
   @Patch(":id/status")

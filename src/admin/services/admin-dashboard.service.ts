@@ -24,13 +24,18 @@ export class AdminDashboardService {
   async getDashboardOverview() {
     try {
       const today = new Date();
+      today.setHours(23, 59, 59, 999);
       const startOfDay = new Date(
         today.getFullYear(),
         today.getMonth(),
-        today.getDate()
+        today.getDate(),
+        0,
+        0,
+        0,
+        0
       );
 
-      // Get basic counts
+      // Get basic counts and orders-by-status
       const [
         totalUsers,
         totalOrders,
@@ -39,95 +44,139 @@ export class AdminDashboardService {
         newUsersToday,
         ordersToday,
         revenueToday,
+        ordersByStatus,
       ] = await Promise.all([
         this.userRepository.count(),
         this.orderRepository.count(),
         this.productRepository.count(),
-        this.orderRepository.sum("total_amount").then((result) => result || 0),
-        this.userRepository.count({
-          where: { created_at: Between(startOfDay, today) },
-        }),
-        this.orderRepository.count({
-          where: { created_at: Between(startOfDay, today) },
-        }),
         this.orderRepository
-          .sum("total_amount", { created_at: Between(startOfDay, today) })
-          .then((result) => result || 0),
+          .createQueryBuilder("order")
+          .select("COALESCE(SUM(order.total_amount), 0)", "sum")
+          .getRawOne()
+          .then((r) => parseFloat(r?.sum ?? "0")),
+        this.userRepository
+          .createQueryBuilder("user")
+          .where("user.created_at >= :start", { start: startOfDay })
+          .andWhere("user.created_at <= :end", { end: today })
+          .getCount(),
+        this.orderRepository
+          .createQueryBuilder("order")
+          .where("order.created_at >= :start", { start: startOfDay })
+          .andWhere("order.created_at <= :end", { end: today })
+          .getCount(),
+        this.orderRepository
+          .createQueryBuilder("order")
+          .select("COALESCE(SUM(order.total_amount), 0)", "sum")
+          .where("order.created_at >= :start", { start: startOfDay })
+          .andWhere("order.created_at <= :end", { end: today })
+          .getRawOne()
+          .then((r) => parseFloat(r?.sum ?? "0")),
+        this.orderRepository
+          .createQueryBuilder("order")
+          .select("order.status", "status")
+          .addSelect("COUNT(*)", "count")
+          .groupBy("order.status")
+          .getRawMany()
+          .then((rows) => {
+            const map: Record<string, number> = {};
+            for (const row of rows) {
+              map[row.status] = parseInt(row.count, 10);
+            }
+            return map;
+          }),
       ]);
 
-      // Get recent orders
+      // Get recent orders (include guest orders: user can be null)
       const recentOrders = await this.orderRepository.find({
         relations: ["user"],
         order: { created_at: "DESC" },
         take: 10,
-        select: {
-          id: true,
-          order_number: true,
-          total_amount: true,
-          status: true,
-          created_at: true,
-          user: {
-            id: true,
-            first_name: true,
-            last_name: true,
-          },
-        },
       });
 
-      // Get low stock products
-      const lowStockProducts = await this.productRepository
+      // Get low stock products and total count
+      const lowStockQuery = this.productRepository
         .createQueryBuilder("product")
         .where("product.manage_stock = :manageStock", { manageStock: true })
         .andWhere("product.stock_quantity <= product.min_stock_level")
-        .andWhere("product.status = :status", { status: ProductStatus.ACTIVE })
-        .select([
-          "product.id",
-          "product.name",
-          "product.sku",
-          "product.stock_quantity",
-          "product.min_stock_level",
-        ])
-        .orderBy("product.stock_quantity", "ASC")
-        .limit(10)
-        .getMany();
+        .andWhere("product.status = :status", { status: ProductStatus.ACTIVE });
+      const [lowStockProducts, lowStockCount] = await Promise.all([
+        lowStockQuery
+          .clone()
+          .select([
+            "product.id",
+            "product.name_en",
+            "product.name_ar",
+            "product.sku",
+            "product.stock_quantity",
+            "product.min_stock_level",
+          ])
+          .orderBy("product.stock_quantity", "ASC")
+          .limit(10)
+          .getMany(),
+        lowStockQuery.getCount(),
+      ]);
 
       // Get top selling products
       const topSellingProducts = await this.orderItemRepository
         .createQueryBuilder("orderItem")
         .leftJoin("orderItem.product", "product")
         .select("product.id", "product_id")
-        .addSelect("product.name", "name")
+        .addSelect("product.name_en", "name")
         .addSelect("SUM(orderItem.quantity)", "quantity_sold")
         .addSelect("SUM(orderItem.total_price)", "revenue")
-        .groupBy("product.id, product.name")
+        .groupBy("product.id, product.name_en")
         .orderBy("SUM(orderItem.quantity)", "DESC")
         .limit(5)
         .getRawMany();
 
       return {
         summary: {
-          total_users: totalUsers,
-          total_orders: totalOrders,
-          total_products: totalProducts,
-          total_revenue: totalRevenue,
-          new_users_today: newUsersToday,
-          orders_today: ordersToday,
-          revenue_today: revenueToday,
+          total_users: Number(totalUsers),
+          total_orders: Number(totalOrders),
+          total_products: Number(totalProducts),
+          total_revenue: Number(totalRevenue),
+          new_users_today: Number(newUsersToday),
+          orders_today: Number(ordersToday),
+          revenue_today: Number(revenueToday),
+          low_stock_count: lowStockCount,
         },
-        recent_orders: recentOrders.map((order) => ({
-          id: order.id,
-          order_number: order.order_number,
-          customer_name: `${order.user.first_name} ${order.user.last_name}`,
-          total_amount: order.total_amount,
-          status: order.status,
-          created_at: order.created_at,
+        orders_by_status: {
+          pending: ordersByStatus.pending ?? 0,
+          confirmed: ordersByStatus.confirmed ?? 0,
+          processing: ordersByStatus.processing ?? 0,
+          shipped: ordersByStatus.shipped ?? 0,
+          delivered: ordersByStatus.delivered ?? 0,
+          cancelled: ordersByStatus.cancelled ?? 0,
+          refunded: ordersByStatus.refunded ?? 0,
+        },
+        recent_orders: recentOrders.map((order) => {
+          const customerName = order.user
+            ? `${order.user.first_name || ""} ${order.user.last_name || ""}`.trim()
+            : order.shipping_address
+              ? `${order.shipping_address.first_name || ""} ${order.shipping_address.last_name || ""}`.trim()
+              : "Guest";
+          return {
+            id: order.id,
+            order_number: order.order_number,
+            customer_name: customerName || "Guest",
+            total_amount: Number(order.total_amount),
+            status: order.status,
+            created_at: order.created_at,
+          };
+        }),
+        low_stock_products: lowStockProducts.map((p) => ({
+          id: p.id,
+          name_en: p.name_en,
+          name_ar: p.name_ar,
+          sku: p.sku,
+          stock_quantity: p.stock_quantity,
+          min_stock_level: p.min_stock_level,
         })),
-        low_stock_products: lowStockProducts,
         top_selling_products: topSellingProducts.map((item) => ({
           product_id: item.product_id,
-          name: item.name,
-          quantity_sold: parseInt(item.quantity_sold),
-          revenue: parseFloat(item.revenue),
+          name: item.name ?? "",
+          quantity_sold: parseInt(String(item.quantity_sold), 10) || 0,
+          revenue: parseFloat(String(item.revenue)) || 0,
         })),
       };
     } catch (error) {
@@ -236,13 +285,13 @@ export class AdminDashboardService {
         .leftJoin("orderItem.order", "order")
         .leftJoin("orderItem.product", "product")
         .leftJoin("product.category", "category")
-        .select("category.name", "category")
+        .select("category.name_en", "category")
         .addSelect("SUM(orderItem.total_price)", "revenue")
         .where("order.created_at BETWEEN :startDate AND :endDate", {
           startDate,
           endDate: now,
         })
-        .groupBy("category.name")
+        .groupBy("category.name_en")
         .orderBy("SUM(orderItem.total_price)", "DESC")
         .limit(5)
         .getRawMany();
@@ -476,11 +525,13 @@ export class AdminDashboardService {
         .leftJoin("product.category", "category")
         .select([
           "product.id",
-          "product.name",
+          "product.name_en",
+          "product.name_ar",
           "product.sku",
           "product.stock_quantity",
           "product.min_stock_level",
-          "category.name",
+          "category.name_en",
+          "category.name_ar",
         ])
         .where("product.manage_stock = :manageStock", { manageStock: true })
         .andWhere("product.stock_quantity <= product.min_stock_level")
@@ -493,7 +544,7 @@ export class AdminDashboardService {
       const outOfStockProducts = await this.productRepository
         .createQueryBuilder("product")
         .leftJoin("product.category", "category")
-        .select(["product.id", "product.name", "product.sku", "category.name"])
+        .select(["product.id", "product.name_en", "product.name_ar", "product.sku", "category.name_en", "category.name_ar"])
         .where("product.stock_quantity = 0")
         .andWhere("product.manage_stock = :manageStock", { manageStock: true })
         .andWhere("product.status = :status", { status: ProductStatus.ACTIVE })
@@ -505,11 +556,11 @@ export class AdminDashboardService {
         .createQueryBuilder("orderItem")
         .leftJoin("orderItem.product", "product")
         .select("product.id", "id")
-        .addSelect("product.name", "name")
+        .addSelect("product.name_en", "name")
         .addSelect("product.stock_quantity", "stock_remaining")
         .addSelect("SUM(orderItem.quantity)", "quantity_sold")
         .addSelect("SUM(orderItem.total_price)", "revenue")
-        .groupBy("product.id, product.name, product.stock_quantity")
+        .groupBy("product.id, product.name_en, product.stock_quantity")
         .orderBy("SUM(orderItem.quantity)", "DESC")
         .limit(10)
         .getRawMany();
@@ -521,18 +572,20 @@ export class AdminDashboardService {
         total_inventory_value: totalInventoryValue,
         low_stock_products: lowStockProducts.map((product) => ({
           id: product.id,
-          name: product.name,
+          name_en: product.name_en,
+          name_ar: product.name_ar,
           sku: product.sku,
           stock_quantity: product.stock_quantity,
           min_stock_level: product.min_stock_level,
-          category: product.category?.name || "Uncategorized",
+          category: product.category ? (product.category.name_en || product.category.name_ar) : "Uncategorized",
         })),
         out_of_stock_products: outOfStockProducts.map((product) => ({
           id: product.id,
-          name: product.name,
+          name_en: product.name_en,
+          name_ar: product.name_ar,
           sku: product.sku,
           stock_quantity: 0,
-          category: product.category?.name || "Uncategorized",
+          category: product.category ? (product.category.name_en || product.category.name_ar) : "Uncategorized",
         })),
         top_selling_products: topSellingProducts.map((item) => ({
           id: item.id,

@@ -20,11 +20,17 @@ export class Banner {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ length: 200 })
-  title: string;
+  @Column({ length: 200, nullable: true })
+  title_en: string;
+
+  @Column({ length: 200, nullable: true })
+  title_ar: string;
 
   @Column({ type: "text", nullable: true })
-  description: string;
+  description_en: string;
+
+  @Column({ type: "text", nullable: true })
+  description_ar: string;
 
   @Column({ name: "image_url" })
   imageUrl: string;
@@ -64,8 +70,11 @@ export class Banner {
   @Column({ name: "click_count", default: 0 })
   clickCount: number;
 
-  @Column({ name: "button_text", nullable: true, length: 50 })
-  buttonText: string; // Optional: "Shop Now", "Learn More", etc.
+  @Column({ name: "button_text_en", nullable: true, length: 50 })
+  buttonText_en: string;
+
+  @Column({ name: "button_text_ar", nullable: true, length: 50 })
+  buttonText_ar: string;
 
   @Column({ name: "text_color", nullable: true, length: 7 })
   textColor: string; // Hex color for overlay text

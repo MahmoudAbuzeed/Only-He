@@ -34,7 +34,17 @@ export class AdminDashboardController {
         total_revenue: 125000.50,
         new_users_today: 12,
         orders_today: 45,
-        revenue_today: 2340.00
+        revenue_today: 2340.00,
+        low_stock_count: 5
+      },
+      orders_by_status: {
+        pending: 10,
+        confirmed: 5,
+        processing: 3,
+        shipped: 2,
+        delivered: 100,
+        cancelled: 0,
+        refunded: 0
       },
       recent_orders: [
         {
@@ -49,7 +59,8 @@ export class AdminDashboardController {
       low_stock_products: [
         {
           id: 1,
-          name: 'iPhone 15 Pro',
+          name_en: 'iPhone 15 Pro',
+          name_ar: 'آيفون 15 برو',
           sku: 'IPH15PRO',
           stock_quantity: 3,
           min_stock_level: 10

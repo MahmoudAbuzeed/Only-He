@@ -196,11 +196,11 @@ export class AdminOrderService {
         .leftJoin('orderItem.order', 'order')
         .leftJoin('orderItem.product', 'product')
         .select('product.id', 'product_id')
-        .addSelect('product.name', 'name')
+        .addSelect('product.name_en', 'name')
         .addSelect('SUM(orderItem.quantity)', 'quantity_sold')
         .addSelect('SUM(orderItem.total_price)', 'revenue')
         .where('order.created_at BETWEEN :startDate AND :endDate', { startDate, endDate: now })
-        .groupBy('product.id, product.name')
+        .groupBy('product.id, product.name_en')
         .orderBy('SUM(orderItem.total_price)', 'DESC')
         .limit(10)
         .getRawMany();

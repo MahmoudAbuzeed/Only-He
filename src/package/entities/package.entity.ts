@@ -21,11 +21,17 @@ export class Package {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ length: 200 })
-  name: string;
+  @Column({ length: 200, nullable: true })
+  name_en: string;
 
-  @Column({ type: 'text' })
-  description: string;
+  @Column({ length: 200, nullable: true })
+  name_ar: string;
+
+  @Column({ type: 'text', nullable: true })
+  description_en: string;
+
+  @Column({ type: 'text', nullable: true })
+  description_ar: string;
 
   @Column({ unique: true, length: 100 })
   sku: string;

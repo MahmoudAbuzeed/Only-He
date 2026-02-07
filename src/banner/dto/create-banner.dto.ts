@@ -11,12 +11,22 @@ import { BannerActionType } from "../entities/banner.entity";
 
 export class CreateBannerDto {
   @IsString()
+  @IsOptional()
   @MaxLength(200)
-  title: string;
+  title_en?: string;
+
+  @IsString()
+  @IsOptional()
+  @MaxLength(200)
+  title_ar?: string;
 
   @IsOptional()
   @IsString()
-  description?: string;
+  description_en?: string;
+
+  @IsOptional()
+  @IsString()
+  description_ar?: string;
 
   @IsUrl()
   imageUrl: string;
@@ -54,7 +64,12 @@ export class CreateBannerDto {
   @IsOptional()
   @IsString()
   @MaxLength(50)
-  buttonText?: string;
+  buttonText_en?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(50)
+  buttonText_ar?: string;
 
   @IsOptional()
   @IsString()

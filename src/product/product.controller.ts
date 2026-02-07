@@ -8,12 +8,22 @@ import {
   Delete,
   Query,
   ParseIntPipe,
+  Request,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery, ApiBody } from '@nestjs/swagger';
 import { ProductService } from './product.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { ProductFilterDto } from './dto/product-filter.dto';
+import { toLocalizedEntity } from '../common/utils/i18n.util';
+
+function localizeProduct(p: any, lang: string) {
+  const out = toLocalizedEntity(p, lang as 'en' | 'ar', 'product');
+  if (out && (p as any).category) {
+    (out as any).category = toLocalizedEntity((p as any).category, lang as 'en' | 'ar', 'category');
+  }
+  return out;
+}
 
 @ApiTags('Products')
 @Controller('product')
@@ -77,12 +87,17 @@ export class ProductController {
       totalPages: 1
     }
   })
-  findAll(@Query() filters: ProductFilterDto) {
-    // If no filters are applied, return all products
+  async findAll(@Request() req: any, @Query() filters: ProductFilterDto) {
+    const lang = req.language || 'en';
     if (Object.keys(filters).length === 0) {
-      return this.productService.findAll();
+      const data = await this.productService.findAll();
+      return (data || []).map((p: any) => localizeProduct(p, lang));
     }
-    return this.productService.findWithFilters(filters);
+    const result = await this.productService.findWithFilters(filters);
+    if (result.products) {
+      (result as any).products = result.products.map((p: any) => localizeProduct(p, lang));
+    }
+    return result;
   }
 
   @Get('active')
@@ -91,8 +106,9 @@ export class ProductController {
     description: 'Retrieve only products with active status'
   })
   @ApiResponse({ status: 200, description: 'Active products retrieved successfully' })
-  findActive() {
-    return this.productService.findActive();
+  async findActive(@Request() req: any) {
+    const data = await this.productService.findActive();
+    return (data || []).map((p: any) => localizeProduct(p, req.language || 'en'));
   }
 
   @Get('featured')
@@ -114,8 +130,9 @@ export class ProductController {
       }
     ]
   })
-  findFeatured() {
-    return this.productService.findFeatured();
+  async findFeatured(@Request() req: any) {
+    const data = await this.productService.findFeatured();
+    return (data || []).map((p: any) => localizeProduct(p, req.language || 'en'));
   }
 
   @Get('low-stock')
@@ -124,8 +141,9 @@ export class ProductController {
     description: 'Retrieve products with stock quantity at or below minimum stock level'
   })
   @ApiResponse({ status: 200, description: 'Low stock products retrieved successfully' })
-  findLowStock() {
-    return this.productService.findLowStock();
+  async findLowStock(@Request() req: any) {
+    const data = await this.productService.findLowStock();
+    return (data || []).map((p: any) => localizeProduct(p, req.language || 'en'));
   }
 
   @Get('search')
@@ -136,8 +154,9 @@ export class ProductController {
   @ApiQuery({ name: 'q', description: 'Search term (minimum 2 characters)', example: 'iPhone' })
   @ApiResponse({ status: 200, description: 'Search results retrieved successfully' })
   @ApiResponse({ status: 400, description: 'Search term too short' })
-  search(@Query('q') searchTerm: string) {
-    return this.productService.search(searchTerm);
+  async search(@Request() req: any, @Query('q') searchTerm: string) {
+    const data = await this.productService.search(searchTerm);
+    return (data || []).map((p: any) => localizeProduct(p, req.language || 'en'));
   }
 
   @Get('category/:categoryId')
@@ -148,8 +167,9 @@ export class ProductController {
   @ApiParam({ name: 'categoryId', description: 'Category ID', example: 5 })
   @ApiResponse({ status: 200, description: 'Products in category retrieved successfully' })
   @ApiResponse({ status: 404, description: 'Category not found' })
-  findByCategory(@Param('categoryId', ParseIntPipe) categoryId: number) {
-    return this.productService.findByCategory(categoryId);
+  async findByCategory(@Request() req: any, @Param('categoryId', ParseIntPipe) categoryId: number) {
+    const data = await this.productService.findByCategory(categoryId);
+    return (data || []).map((p: any) => localizeProduct(p, req.language || 'en'));
   }
 
   @Get('sku/:sku')
@@ -160,8 +180,9 @@ export class ProductController {
   @ApiParam({ name: 'sku', description: 'Product SKU', example: 'IPH15PRO128' })
   @ApiResponse({ status: 200, description: 'Product found' })
   @ApiResponse({ status: 404, description: 'Product not found' })
-  findBySku(@Param('sku') sku: string) {
-    return this.productService.findBySku(sku);
+  async findBySku(@Request() req: any, @Param('sku') sku: string) {
+    const data = await this.productService.findBySku(sku);
+    return data ? localizeProduct(data, req.language || 'en') : data;
   }
 
   @Get(':id')
@@ -185,8 +206,9 @@ export class ProductController {
     }
   })
   @ApiResponse({ status: 404, description: 'Product not found' })
-  findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.productService.findOne(id);
+  async findOne(@Request() req: any, @Param('id', ParseIntPipe) id: number) {
+    const data = await this.productService.findOne(id);
+    return data ? localizeProduct(data, req.language || 'en') : data;
   }
 
   @Patch(':id')

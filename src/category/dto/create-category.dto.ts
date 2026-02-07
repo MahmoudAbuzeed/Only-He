@@ -10,12 +10,20 @@ import {
 
 export class CreateCategoryDto {
   @IsString()
-  @IsNotEmpty()
-  name: string;
+  @IsOptional()
+  name_en?: string;
 
   @IsString()
   @IsOptional()
-  description?: string;
+  name_ar?: string;
+
+  @IsString()
+  @IsOptional()
+  description_en?: string;
+
+  @IsString()
+  @IsOptional()
+  description_ar?: string;
 
   @IsOptional()
   @ValidateIf((o) => o.image_url && o.image_url.trim() !== "")
@@ -40,9 +48,17 @@ export class CreateCategoryDto {
 
   @IsString()
   @IsOptional()
-  meta_title?: string;
+  meta_title_en?: string;
 
   @IsString()
   @IsOptional()
-  meta_description?: string;
+  meta_title_ar?: string;
+
+  @IsString()
+  @IsOptional()
+  meta_description_en?: string;
+
+  @IsString()
+  @IsOptional()
+  meta_description_ar?: string;
 }

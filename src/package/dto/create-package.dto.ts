@@ -36,12 +36,20 @@ export class PackageProductDto {
 
 export class CreatePackageDto {
   @IsString()
-  @IsNotEmpty()
-  name: string;
+  @IsOptional()
+  name_en?: string;
 
   @IsString()
-  @IsNotEmpty()
-  description: string;
+  @IsOptional()
+  name_ar?: string;
+
+  @IsString()
+  @IsOptional()
+  description_en?: string;
+
+  @IsString()
+  @IsOptional()
+  description_ar?: string;
 
   @IsString()
   @IsNotEmpty()

@@ -23,6 +23,7 @@ import { CartService } from "./cart.service";
 import { AddToCartDto } from "./dto/add-to-cart.dto";
 import { UpdateCartItemDto } from "./dto/update-cart-item.dto";
 import { CartIdentityGuard } from "./guards/cart-identity.guard";
+import { toLocalizedEntity } from "../common/utils/i18n.util";
 
 @ApiTags("Cart")
 @Controller("cart")
@@ -96,8 +97,25 @@ export class CartController {
       },
     },
   })
-  getCart(@Request() req) {
-    return this.cartService.getCart(req.cartIdentity);
+  async getCart(@Request() req: any) {
+    const result = await this.cartService.getCart(req.cartIdentity);
+    const lang = req.language || "en";
+    if (result?.data?.items?.length) {
+      result.data.items = result.data.items.map((item: any) => {
+        const out = { ...item };
+        if (item.product) {
+          out.product = toLocalizedEntity(item.product, lang as "en" | "ar", "product");
+          if (item.product?.category) {
+            out.product.category = toLocalizedEntity(item.product.category, lang as "en" | "ar", "category");
+          }
+        }
+        if (item.package) {
+          out.package = toLocalizedEntity(item.package, lang as "en" | "ar", "package");
+        }
+        return out;
+      });
+    }
+    return result;
   }
 
   @Get("count")

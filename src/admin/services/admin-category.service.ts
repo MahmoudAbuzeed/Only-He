@@ -21,10 +21,18 @@ export class AdminCategoryService {
 
   async createCategory(createCategoryDto: CreateCategoryDto) {
     try {
-      // Check if category name already exists
-      const existingCategory = await this.categoryRepository.findByName(createCategoryDto.name);
-      if (existingCategory) {
-        throw this.errorHandler.badRequest({ message: 'Category name already exists' });
+      // Check if category name already exists (either language)
+      if (createCategoryDto.name_en) {
+        const existingByEn = await this.categoryRepository.findByName(createCategoryDto.name_en);
+        if (existingByEn) {
+          throw this.errorHandler.badRequest({ message: 'Category name (EN) already exists' });
+        }
+      }
+      if (createCategoryDto.name_ar) {
+        const existingByAr = await this.categoryRepository.findByName(createCategoryDto.name_ar);
+        if (existingByAr) {
+          throw this.errorHandler.badRequest({ message: 'Category name (AR) already exists' });
+        }
       }
 
       // Validate parent category if provided
@@ -69,7 +77,7 @@ export class AdminCategoryService {
       // Apply filters
       if (search) {
         queryBuilder = queryBuilder.where(
-          '(category.name ILIKE :search OR category.description ILIKE :search)',
+          '(category.name_en ILIKE :search OR category.name_ar ILIKE :search OR category.description_en ILIKE :search OR category.description_ar ILIKE :search)',
           { search: `%${search}%` }
         );
       }
@@ -157,10 +165,16 @@ export class AdminCategoryService {
       }
 
       // Check if new name already exists (if name is being updated)
-      if (updateCategoryDto.name && updateCategoryDto.name !== category.name) {
-        const existingCategory = await this.categoryRepository.findByName(updateCategoryDto.name);
-        if (existingCategory) {
-          throw this.errorHandler.badRequest({ message: 'Category name already exists' });
+      if (updateCategoryDto.name_en && updateCategoryDto.name_en !== category.name_en) {
+        const existingByEn = await this.categoryRepository.findByName(updateCategoryDto.name_en);
+        if (existingByEn) {
+          throw this.errorHandler.badRequest({ message: 'Category name (EN) already exists' });
+        }
+      }
+      if (updateCategoryDto.name_ar && updateCategoryDto.name_ar !== category.name_ar) {
+        const existingByAr = await this.categoryRepository.findByName(updateCategoryDto.name_ar);
+        if (existingByAr) {
+          throw this.errorHandler.badRequest({ message: 'Category name (AR) already exists' });
         }
       }
 
@@ -381,11 +395,11 @@ export class AdminCategoryService {
           .createQueryBuilder('orderItem')
           .leftJoin('orderItem.product', 'product')
           .select('product.id', 'product_id')
-          .addSelect('product.name', 'product_name')
+          .addSelect('product.name_en', 'product_name')
           .addSelect('SUM(orderItem.quantity)', 'quantity_sold')
           .addSelect('SUM(orderItem.total_price)', 'revenue')
           .where('product.category_id = :categoryId', { categoryId: id })
-          .groupBy('product.id, product.name')
+          .groupBy('product.id, product.name_en')
           .orderBy('SUM(orderItem.quantity)', 'DESC')
           .limit(5)
           .getRawMany(),
@@ -410,7 +424,8 @@ export class AdminCategoryService {
       return {
         category: {
           id: category.id,
-          name: category.name,
+          name_en: category.name_en,
+          name_ar: category.name_ar,
         },
         products: {
           total: productsCount,
@@ -475,13 +490,13 @@ export class AdminCategoryService {
       const categories = await this.categoryRepository.findAllWithHierarchy();
 
       // Generate CSV content
-      const headers = 'ID,Name,Description,Parent Category,Is Active,Products Count,Created Date\n';
+      const headers = 'ID,Name (EN),Name (AR),Description (EN),Description (AR),Parent Category,Is Active,Products Count,Created Date\n';
       const rows = await Promise.all(
         categories.map(async (category) => {
           const productsCount = await this.productRepository.countByCategory(category.id);
-          const parentName = category.parent ? category.parent.name : 'Root';
-          
-          return `${category.id},"${category.name}","${category.description || ''}","${parentName}",${category.is_active},${productsCount},${category.created_at}`;
+          const parentName = category.parent ? (category.parent.name_en || category.parent.name_ar || 'Root') : 'Root';
+
+          return `${category.id},"${category.name_en || ''}","${category.name_ar || ''}","${category.description_en || ''}","${category.description_ar || ''}","${parentName}",${category.is_active},${productsCount},${category.created_at}`;
         })
       );
 

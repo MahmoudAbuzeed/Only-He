@@ -51,10 +51,9 @@ export class ProductService {
         });
       }
 
-      // Generate slug for SEO if not provided
       if (createProductDto.seo_data && !createProductDto.seo_data.slug) {
         createProductDto.seo_data.slug = this.generateSlug(
-          createProductDto.name
+          createProductDto.name_en || createProductDto.name_ar || ""
         );
       }
 
@@ -191,13 +190,9 @@ export class ProductService {
         }
       }
 
-      // Generate slug for SEO if name is being updated
-      if (updateProductDto.name && updateProductDto.seo_data) {
-        if (!updateProductDto.seo_data.slug) {
-          updateProductDto.seo_data.slug = this.generateSlug(
-            updateProductDto.name
-          );
-        }
+      const nameForSlug = updateProductDto.name_en || updateProductDto.name_ar;
+      if (nameForSlug && updateProductDto.seo_data && !updateProductDto.seo_data.slug) {
+        updateProductDto.seo_data.slug = this.generateSlug(nameForSlug);
       }
 
       const updatedProduct = await this.productRepository.update(

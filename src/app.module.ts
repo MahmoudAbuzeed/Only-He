@@ -12,6 +12,7 @@ import { ServeStaticModule } from "@nestjs/serve-static";
 import { JwtService } from "@nestjs/jwt";
 import { Logger } from "shared/logger/logger.service";
 import { LoggerMiddleware } from "shared/logger/logger.middleware";
+import { LanguageMiddleware } from "./common/middleware/language.middleware";
 
 @Global()
 @Module({
@@ -45,6 +46,7 @@ import { LoggerMiddleware } from "shared/logger/logger.middleware";
 })
 export class AppModule {
   configure(consumer: MiddlewareConsumer) {
+    consumer.apply(LanguageMiddleware).forRoutes("*");
     consumer.apply(LoggerMiddleware).forRoutes("*");
   }
 }

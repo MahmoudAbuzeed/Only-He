@@ -15,11 +15,17 @@ export class Category {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ length: 100 })
-  name: string;
+  @Column({ length: 100, nullable: true })
+  name_en: string;
+
+  @Column({ length: 100, nullable: true })
+  name_ar: string;
 
   @Column({ type: "text", nullable: true })
-  description: string;
+  description_en: string;
+
+  @Column({ type: "text", nullable: true })
+  description_ar: string;
 
   @Column({ nullable: true })
   image_url: string;
@@ -34,10 +40,16 @@ export class Category {
   slug: string;
 
   @Column({ nullable: true })
-  meta_title: string;
+  meta_title_en: string;
+
+  @Column({ nullable: true })
+  meta_title_ar: string;
 
   @Column({ type: "text", nullable: true })
-  meta_description: string;
+  meta_description_en: string;
+
+  @Column({ type: "text", nullable: true })
+  meta_description_ar: string;
 
   // Self-referencing for parent-child categories
   @Column({ nullable: true })

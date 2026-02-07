@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Query, ParseIntPipe } from "@nestjs/common";
+import { Controller, Get, Param, Query, ParseIntPipe, Request } from "@nestjs/common";
 import {
   ApiTags,
   ApiOperation,
@@ -8,6 +8,24 @@ import {
 } from "@nestjs/swagger";
 import { PackageService } from "./package.service";
 import { PackageStatus } from "./entities/package.entity";
+import { toLocalizedEntity } from "../common/utils/i18n.util";
+
+function localizePackage(pkg: any, lang: string) {
+  const out = toLocalizedEntity(pkg, lang as "en" | "ar", "package");
+  if (out?.package_products?.length) {
+    (out as any).package_products = (pkg.package_products || []).map((pp: any) => {
+      const ppOut = { ...pp };
+      if (pp.product) {
+        ppOut.product = toLocalizedEntity(pp.product, lang as "en" | "ar", "product");
+        if (pp.product?.category) {
+          ppOut.product.category = toLocalizedEntity(pp.product.category, lang as "en" | "ar", "category");
+        }
+      }
+      return ppOut;
+    });
+  }
+  return out;
+}
 
 @ApiTags("Packages")
 @Controller("package")
@@ -91,7 +109,8 @@ export class PackageController {
       totalPages: 3,
     },
   })
-  findAll(
+  async findAll(
+    @Request() req: any,
     @Query("page") page?: number,
     @Query("limit") limit?: number,
     @Query("status") status?: PackageStatus,
@@ -99,7 +118,7 @@ export class PackageController {
     @Query("sort_by") sort_by?: string,
     @Query("sort_order") sort_order?: "ASC" | "DESC"
   ) {
-    return this.packageService.findAll({
+    const result = await this.packageService.findAll({
       page: page ? parseInt(page.toString()) : 1,
       limit: limit ? parseInt(limit.toString()) : 10,
       status,
@@ -107,6 +126,11 @@ export class PackageController {
       sort_by,
       sort_order,
     });
+    const lang = req.language || "en";
+    if (result?.packages?.length) {
+      (result as any).packages = result.packages.map((p: any) => localizePackage(p, lang));
+    }
+    return result;
   }
 
   @Get("active")
@@ -127,8 +151,9 @@ export class PackageController {
       },
     ],
   })
-  findActive() {
-    return this.packageService.findActive();
+  async findActive(@Request() req: any) {
+    const data = await this.packageService.findActive();
+    return (data || []).map((p: any) => localizePackage(p, req.language || "en"));
   }
 
   @Get("featured")
@@ -149,8 +174,9 @@ export class PackageController {
       },
     ],
   })
-  findFeatured() {
-    return this.packageService.findFeatured();
+  async findFeatured(@Request() req: any) {
+    const data = await this.packageService.findFeatured();
+    return (data || []).map((p: any) => localizePackage(p, req.language || "en"));
   }
 
   @Get("search")
@@ -183,11 +209,16 @@ export class PackageController {
       },
     ],
   })
-  search(@Query("q") query: string, @Query("limit") limit?: number) {
-    return this.packageService.search(
+  async search(
+    @Request() req: any,
+    @Query("q") query: string,
+    @Query("limit") limit?: number
+  ) {
+    const data = await this.packageService.search(
       query,
       limit ? parseInt(limit.toString()) : 10
     );
+    return (data || []).map((p: any) => localizePackage(p, req.language || "en"));
   }
 
   @Get(":id")
@@ -233,8 +264,9 @@ export class PackageController {
     },
   })
   @ApiResponse({ status: 404, description: "Package not found" })
-  findOne(@Param("id", ParseIntPipe) id: number) {
-    return this.packageService.findOne(id);
+  async findOne(@Request() req: any, @Param("id", ParseIntPipe) id: number) {
+    const data = await this.packageService.findOne(id);
+    return data ? localizePackage(data, req.language || "en") : data;
   }
 
   @Get("sku/:sku")
@@ -259,7 +291,8 @@ export class PackageController {
     },
   })
   @ApiResponse({ status: 404, description: "Package not found" })
-  findBySku(@Param("sku") sku: string) {
-    return this.packageService.findBySku(sku);
+  async findBySku(@Request() req: any, @Param("sku") sku: string) {
+    const data = await this.packageService.findBySku(sku);
+    return data ? localizePackage(data, req.language || "en") : data;
   }
 }

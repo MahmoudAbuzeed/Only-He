@@ -59,9 +59,12 @@ export class OrderItem {
   })
   total_price: number;
 
-  // Store product/package details at time of order (for historical accuracy)
-  @Column({ length: 200 })
-  item_name: string;
+  // Store product/package details at time of order (both languages for i18n)
+  @Column({ length: 200, nullable: true })
+  item_name_en: string;
+
+  @Column({ length: 200, nullable: true })
+  item_name_ar: string;
 
   @Column({ length: 100, nullable: true })
   item_sku: string;
@@ -69,6 +72,8 @@ export class OrderItem {
   @Column({ type: "json", nullable: true })
   item_details: {
     description?: string;
+    description_en?: string;
+    description_ar?: string;
     image_url?: string;
     attributes?: Record<string, any>;
   };
