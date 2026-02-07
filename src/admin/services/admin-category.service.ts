@@ -82,8 +82,9 @@ export class AdminCategoryService {
         );
       }
 
-      if (parent_id !== undefined) {
-        if (parent_id === null || parent_id === 'null') {
+      if (parent_id !== undefined && parent_id !== '') {
+        const rootOnly = parent_id === null || parent_id === 'null' || parent_id === 0 || parent_id === '0';
+        if (rootOnly) {
           queryBuilder = queryBuilder.andWhere('category.parent_id IS NULL');
         } else {
           queryBuilder = queryBuilder.andWhere('category.parent_id = :parentId', { parentId: parent_id });

@@ -56,11 +56,12 @@ export class AdminCategoryController {
     summary: 'Get all categories (Admin)',
     description: 'Retrieve all categories with hierarchy and product counts'
   })
-  @ApiQuery({ name: 'page', required: false, description: 'Page number', example: 1 })
+  @ApiQuery({ name: 'page', required: false, description: 'Page number (1-based)', example: 1 })
   @ApiQuery({ name: 'limit', required: false, description: 'Items per page', example: 20 })
-  @ApiQuery({ name: 'search', required: false, description: 'Search by name', example: 'electronics' })
-  @ApiQuery({ name: 'parent_id', required: false, description: 'Filter by parent category', example: 1 })
-  @ApiQuery({ name: 'is_active', required: false, description: 'Filter by active status', example: true })
+  @ApiQuery({ name: 'search', required: false, description: 'Search by name or description (any language)', example: 'electronics' })
+  @ApiQuery({ name: 'parent_id', required: false, description: 'Filter by parent: omit = all; "null" or 0 = root only; number = children of that parent', example: 1 })
+  @ApiQuery({ name: 'is_active', required: false, description: 'Filter by active: "true" | "false"', example: 'true' })
+  @ApiQuery({ name: 'include_products_count', required: false, description: 'Include products_count per category (default true)', example: 'true' })
   @ApiResponse({ 
     status: 200, 
     description: 'Categories retrieved successfully',
